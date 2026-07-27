@@ -7,11 +7,14 @@ const devIds = new Set(
 		.filter(Boolean)
 );
 
-export function getRole(
-	user: { role?: string | null },
-	intraAccountId?: string
-): 'dev' | 'admin' | 'user' {
+const STAFF_ROLES = ['admin', 'editor', 'writer', 'designer'] as const;
+
+export type Role = 'dev' | (typeof STAFF_ROLES)[number] | 'user';
+
+export function getRole(user: { role?: string | null }, intraAccountId?: string): Role {
 	if (intraAccountId && devIds.has(intraAccountId)) return 'dev';
-	if (user.role === 'admin') return 'admin';
+	if (user.role && (STAFF_ROLES as readonly string[]).includes(user.role)) {
+		return user.role as (typeof STAFF_ROLES)[number];
+	}
 	return 'user';
 }
