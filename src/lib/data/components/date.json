@@ -1,0 +1,11 @@
+{
+	"type": "date",
+	"label": "Date",
+	"defaultWidth": 120,
+	"defaultHeight": 32,
+	"properties": {
+		"content": "January 1, 2026",
+		"fontSize": "12px"
+	},
+	"fields": [{ "key": "content", "label": "Format", "type": "text", "group": "Content" }]
+}

@@ -1,0 +1,26 @@
+{
+	"type": "citation",
+	"label": "Citation",
+	"defaultWidth": 220,
+	"defaultHeight": 40,
+	"properties": {
+		"citationType": "designer",
+		"content": "Designer: {}",
+		"fontSize": "12px"
+	},
+	"fields": [
+		{
+			"key": "citationType",
+			"label": "Credits",
+			"type": "select",
+			"options": ["designer", "writers", "editor"],
+			"group": "Content"
+		},
+		{
+			"key": "content",
+			"label": "Format",
+			"type": "text",
+			"group": "Content"
+		}
+	]
+}

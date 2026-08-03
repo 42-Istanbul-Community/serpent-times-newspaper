@@ -1,0 +1,16 @@
+{
+	"type": "title",
+	"label": "Title",
+	"defaultWidth": 280,
+	"defaultHeight": 56,
+	"properties": {
+		"manual": "true",
+		"content": "Title",
+		"fontSize": "32px",
+		"fontWeight": "700"
+	},
+	"fields": [
+		{ "key": "manual", "label": "Manual", "type": "toggle", "group": "Manual" },
+		{ "key": "content", "label": "Content", "type": "textarea", "group": "Content" }
+	]
+}

@@ -21,3 +21,7 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# CDN uploads (served/persisted separately in production, e.g. via a Docker volume)
+/cdn/*
+!/cdn/.gitkeep
