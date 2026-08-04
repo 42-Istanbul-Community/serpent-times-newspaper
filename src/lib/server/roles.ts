@@ -1,7 +1,7 @@
 import { env } from '$env/dynamic/private';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { account } from '$lib/server/db/schema';
+import { account, user as userTable } from '$lib/server/db/schema';
 
 const devIds = new Set(
 	(env.INTRA_DEV_IDS ?? '')
@@ -23,6 +23,24 @@ export function getRole(user: { role?: string | null }, intraAccountId?: string)
 		return user.role as (typeof STAFF_ROLES)[number];
 	}
 	return 'user';
+}
+
+/**
+ * Intra logins of everyone holding the 'dev' role, i.e. whose linked Intra
+ * account id is listed in INTRA_DEV_IDS. Used to name who to ping on Slack
+ * when something auth-related breaks (see auth-error-toast.svelte). Devs who
+ * have never signed in yet have no row, so they simply don't show up.
+ */
+export async function getDevLogins(): Promise<string[]> {
+	if (devIds.size === 0) return [];
+
+	const rows = await db
+		.select({ login: userTable.login })
+		.from(account)
+		.innerJoin(userTable, eq(userTable.id, account.userId))
+		.where(and(eq(account.providerId, 'intra'), inArray(account.accountId, [...devIds])));
+
+	return rows.map((row) => row.login).filter((login): login is string => Boolean(login));
 }
 
 /** Looks up the user's linked Intra account and resolves their effective role. */
