@@ -137,9 +137,9 @@
 				class="flex items-center gap-3 rounded-md px-1 py-1 text-paper-ink transition-colors duration-300 hover:text-slytherin"
 			>
 				<span class="hidden flex-col items-start gap-0.5 text-left md:flex">
-					<span class="text-xs leading-none text-ui-text-muted">
-						{roleLabels[data.role ?? 'user']}
-					</span>
+					{#if data.role && data.role !== 'user'}
+						<span class="text-xs leading-none text-ui-text-muted">{roleLabels[data.role]}</span>
+					{/if}
 					<span class="text-base leading-none font-medium">{displayName}</span>
 				</span>
 				{#if data.user.image}
