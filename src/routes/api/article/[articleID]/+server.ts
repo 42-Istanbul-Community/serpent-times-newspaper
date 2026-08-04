@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, publicationStatus } from '$lib/server/db/schema';
-import { getCurrentUserId } from '$lib/server/current-user';
+import { requireUserId } from '$lib/server/require-login';
 import type { RequestHandler } from './$types';
 
 // GET /api/article/<articleID> - fetches one full article row (id/title/
@@ -16,7 +16,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	const id = Number(params.articleID);
 	if (!Number.isInteger(id)) error(400, 'Invalid id');
 
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 	const [row] = await db
 		.select()
 		.from(article)
@@ -35,7 +35,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	const id = Number(params.articleID);
 	if (!Number.isInteger(id)) error(400, 'Invalid id');
 
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 	const body = await request.json();
 
 	const patch: Partial<typeof article.$inferInsert> = {};
@@ -73,7 +73,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 	const id = Number(params.articleID);
 	if (!Number.isInteger(id)) error(400, 'Invalid id');
 
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 	const [row] = await db
 		.delete(article)
 		.where(and(eq(article.id, id), eq(article.userId, userId)))

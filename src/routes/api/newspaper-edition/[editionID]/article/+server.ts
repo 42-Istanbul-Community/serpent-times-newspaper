@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, newspaperEdition, pageTemplate } from '$lib/server/db/schema';
-import { getCurrentUserId } from '$lib/server/current-user';
+import { requireUserId } from '$lib/server/require-login';
 import type { RequestHandler } from './$types';
 
 const CREATABLE_CATEGORIES = ['cover', 'index', 'citation'] as const;
@@ -17,7 +17,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	const editionId = Number(params.editionID);
 	if (!Number.isInteger(editionId)) error(400, 'Invalid id');
 
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 	const [edition] = await db
 		.select({ id: newspaperEdition.id })
 		.from(newspaperEdition)

@@ -3,14 +3,14 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, pageTemplate } from '$lib/server/db/schema';
 import type { ArticlePage } from '$lib/server/db/schema/editor/article';
-import { getCurrentUserId } from '$lib/server/current-user';
+import { requireUserId } from '$lib/server/require-login';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const id = Number(params.paperID);
 	if (!Number.isInteger(id)) error(404, 'Not found');
 
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 	const [articleRow] = await db
 		.select()
 		.from(article)

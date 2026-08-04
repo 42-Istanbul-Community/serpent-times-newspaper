@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
-	import { FileText, Newspaper, PenTool, LogIn, Sun, Moon, Menu, X } from '@lucide/svelte';
-	import { NavigationMenu, Button, Switch } from 'bits-ui';
+	import { FileText, Newspaper, PenTool, LogIn, LogOut, Sun, Moon, Menu, X } from '@lucide/svelte';
+	import { NavigationMenu, Switch } from 'bits-ui';
 	import { ModeWatcher, mode, setMode } from 'mode-watcher';
 	import { homepageNav } from './homepage-nav.svelte';
+	import type { LayoutServerData } from './$types';
 	import './layout.css';
 
-	let { children } = $props();
+	let { data, children }: { data: LayoutServerData; children: import('svelte').Snippet } = $props();
 	let currentPath = $derived(page.url.pathname);
 	let mobileMenuOpen = $state(false);
 
@@ -50,7 +51,9 @@
 				</button>
 				<div class="hidden items-center gap-10 md:flex">
 					{@render Logo()}
-					{@render Navbar()}
+					{#if data.user}
+						{@render Navbar()}
+					{/if}
 				</div>
 			</div>
 			<div class="text-center md:hidden">
@@ -84,7 +87,7 @@
 {#snippet Navbar()}
 	<NavigationMenu.Root>
 		<NavigationMenu.List class="flex items-center gap-8">
-			{#each navItems as item}
+			{#each navItems as item (item.path)}
 				<NavigationMenu.Item>
 					<NavigationMenu.Link
 						href={item.path}
@@ -104,30 +107,54 @@
 {/snippet}
 
 {#snippet Login()}
-	<Button.Root
-		href="/login"
-		class="flex items-center gap-1.5 text-paper-ink transition-colors duration-300"
-	>
-		<LogIn class="h-4 w-4" />
-		<span class="hidden md:inline">Login</span>
-	</Button.Root>
+	{#if data.user}
+		<div class="flex items-center gap-3">
+			{#if data.user.image}
+				<img src={data.user.image} alt={data.user.name} class="h-7 w-7 rounded-full object-cover" />
+			{/if}
+			<span class="hidden text-sm text-paper-ink md:inline">{data.user.name}</span>
+			<!-- login/logout actions live on the homepage route (see
+			     +page.server.ts), so target them absolutely from any page. -->
+			<form method="post" action="/?/signOut">
+				<button
+					type="submit"
+					class="flex items-center gap-1.5 text-paper-ink transition-colors duration-300"
+				>
+					<LogOut class="h-4 w-4" />
+					<span class="hidden md:inline">Sign out</span>
+				</button>
+			</form>
+		</div>
+	{:else}
+		<form method="post" action="/?/signInIntra">
+			<button
+				type="submit"
+				class="flex items-center gap-1.5 text-paper-ink transition-colors duration-300"
+			>
+				<LogIn class="h-4 w-4" />
+				<span class="hidden md:inline">Login with Intra</span>
+			</button>
+		</form>
+	{/if}
 {/snippet}
 
 {#snippet MobileMenu()}
 	<div class="flex flex-col gap-1 border-t border-paper-rule px-4 py-3 md:hidden">
-		{#each navItems as item (item.path)}
-			<a
-				href={item.path}
-				onclick={() => (mobileMenuOpen = false)}
-				class="flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-300 {currentPath ===
-				item.path
-					? activeClass
-					: inactiveClass}"
-			>
-				<item.icon class="h-4 w-4" />
-				<span>{item.label}</span>
-			</a>
-		{/each}
+		{#if data.user}
+			{#each navItems as item (item.path)}
+				<a
+					href={item.path}
+					onclick={() => (mobileMenuOpen = false)}
+					class="flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-300 {currentPath ===
+					item.path
+						? activeClass
+						: inactiveClass}"
+				>
+					<item.icon class="h-4 w-4" />
+					<span>{item.label}</span>
+				</a>
+			{/each}
+		{/if}
 		{#if homepageNav.editions.length > 0}
 			{@render EditionSwitcher()}
 		{/if}

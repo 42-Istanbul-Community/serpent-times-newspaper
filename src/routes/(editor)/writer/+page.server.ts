@@ -3,11 +3,11 @@ import { and, desc, eq } from 'drizzle-orm';
 import { resolve } from '$app/paths';
 import { db } from '$lib/server/db';
 import { article } from '$lib/server/db/schema';
-import { getCurrentUserId } from '$lib/server/current-user';
+import { requireUserId } from '$lib/server/require-login';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 	const papers = await db
 		.select({
 			id: article.id,
@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	// creates an empty draft paper and redirects straight into its editor.
 	create: async ({ locals }) => {
-		const userId = getCurrentUserId(locals);
+		const userId = requireUserId(locals);
 		const [row] = await db
 			.insert(article)
 			.values({ userId, title: 'Untitled', pages: [] })

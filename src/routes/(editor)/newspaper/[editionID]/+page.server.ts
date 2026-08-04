@@ -2,13 +2,13 @@ import { error } from '@sveltejs/kit';
 import { and, eq, inArray, ne } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, newspaperEdition, pageTemplate } from '$lib/server/db/schema';
-import { getCurrentUserId } from '$lib/server/current-user';
+import { requireUserId } from '$lib/server/require-login';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const id = Number(params.editionID);
 	if (!Number.isInteger(id)) error(404, 'Not found');
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 
 	const [edition] = await db
 		.select()

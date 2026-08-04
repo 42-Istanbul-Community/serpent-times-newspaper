@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { newspaperEdition, publicationStatus } from '$lib/server/db/schema';
-import { getCurrentUserId } from '$lib/server/current-user';
+import { requireUserId } from '$lib/server/require-login';
 import { renderEditionPdf, saveEditionPdf } from '$lib/server/pdf';
 import type { RequestHandler } from './$types';
 
@@ -15,7 +15,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals, url }) =>
 	const id = Number(params.editionID);
 	if (!Number.isInteger(id)) error(400, 'Invalid id');
 
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 	const body = await request.json();
 
 	const patch: Partial<typeof newspaperEdition.$inferInsert> = {};

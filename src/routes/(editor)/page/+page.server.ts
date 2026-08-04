@@ -3,11 +3,11 @@ import { desc, eq } from 'drizzle-orm';
 import { resolve } from '$app/paths';
 import { db } from '$lib/server/db';
 import { pageTemplate, pageTemplateCategory } from '$lib/server/db/schema';
-import { getCurrentUserId } from '$lib/server/current-user';
+import { requireUserId } from '$lib/server/require-login';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const userId = getCurrentUserId(locals);
+	const userId = requireUserId(locals);
 	const templates = await db
 		.select({
 			id: pageTemplate.id,
@@ -27,7 +27,7 @@ export const actions: Actions = {
 	// creates a draft template in the given category and redirects straight
 	// into its editor - the per-category "+ New" buttons on the dashboard.
 	create: async ({ request, locals }) => {
-		const userId = getCurrentUserId(locals);
+		const userId = requireUserId(locals);
 		const category = (await request.formData()).get('category');
 		const allowed = pageTemplateCategory.enumValues;
 
