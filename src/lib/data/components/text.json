@@ -1,0 +1,14 @@
+{
+	"type": "text",
+	"label": "Text",
+	"defaultWidth": 240,
+	"defaultHeight": 96,
+	"properties": {
+		"manual": "true",
+		"content": "Text"
+	},
+	"fields": [
+		{ "key": "manual", "label": "Manual", "type": "toggle", "group": "Manual" },
+		{ "key": "content", "label": "Content", "type": "textarea", "group": "Content" }
+	]
+}

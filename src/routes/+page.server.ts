@@ -1,18 +1,34 @@
 import { redirect } from '@sveltejs/kit';
-import type { Actions } from './$types';
-import type { PageServerLoad } from './$types';
+import { desc, eq } from 'drizzle-orm';
+import { db } from '$lib/server/db';
+import { newspaperEdition } from '$lib/server/db/schema';
 import { auth } from '$lib/server/auth';
 import { resolveRole } from '$lib/server/roles';
+import type { Actions, PageServerLoad } from './$types';
 
+// homepage: public reading list of published newspaper editions, newest
+// first - only published editions ever get a baked PDF (see the
+// newspaper-edition PATCH endpoint's publish hook), so unpublished ones
+// have nothing to read. Shown to everyone, logged in or not.
 export const load: PageServerLoad = async (event) => {
+	const editions = await db
+		.select({
+			id: newspaperEdition.id,
+			title: newspaperEdition.title,
+			cdnUrl: newspaperEdition.cdnUrl
+		})
+		.from(newspaperEdition)
+		.where(eq(newspaperEdition.status, 'published'))
+		.orderBy(desc(newspaperEdition.updatedAt));
+
 	const user = event.locals.user;
-	if (!user) return { user: null, role: null };
+	if (!user) return { editions, user: null, role: null };
 
 	// The admin plugin adds `role` to the user row at runtime, but the base
 	// `User` type from 'better-auth' doesn't declare it.
 	const userWithRole = user as typeof user & { role?: string | null };
 
-	return { user, role: await resolveRole(userWithRole) };
+	return { editions, user, role: await resolveRole(userWithRole) };
 };
 
 export const actions: Actions = {

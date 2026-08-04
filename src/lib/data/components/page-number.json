@@ -1,0 +1,12 @@
+{
+	"type": "page-number",
+	"label": "Page Number",
+	"defaultWidth": 64,
+	"defaultHeight": 32,
+	"properties": {
+		"content": "Page {}",
+		"fontSize": "12px",
+		"textAlign": "center"
+	},
+	"fields": [{ "key": "content", "label": "Format", "type": "text", "group": "Content" }]
+}

@@ -11,5 +11,3 @@ export const oauthSecret = pgTable('oauth_secret', {
 	secret: text('secret').notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
-
-export * from './auth.schema';
