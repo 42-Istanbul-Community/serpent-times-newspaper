@@ -3,7 +3,7 @@ import { desc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { newspaperEdition } from '$lib/server/db/schema';
 import { auth } from '$lib/server/auth';
-import { getDevLogins, resolveRole } from '$lib/server/roles';
+import { getDevLogins } from '$lib/server/roles';
 import type { Actions, PageServerLoad } from './$types';
 
 // homepage: public reading list of published newspaper editions, newest
@@ -26,14 +26,8 @@ export const load: PageServerLoad = async (event) => {
 	// dev lookup that fills in the toast's "who to ping" line.
 	const devLogins = event.url.searchParams.has('error') ? await getDevLogins() : [];
 
-	const user = event.locals.user;
-	if (!user) return { editions, user: null, role: null, devLogins };
-
-	// The admin plugin adds `role` to the user row at runtime, but the base
-	// `User` type from 'better-auth' doesn't declare it.
-	const userWithRole = user as typeof user & { role?: string | null };
-
-	return { editions, user, role: await resolveRole(userWithRole), devLogins };
+	// `user` and `role` come from the layout load, which every page inherits.
+	return { editions, devLogins };
 };
 
 export const actions: Actions = {

@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 #
-# Push the current 42 client secret to the server.
+# Change a user's role, for devs who want to see the app as someone else.
 # Usage:
-#   ./scripts/set-intra-secret.sh <server-url> [client-secret]
+#   ./scripts/set-user-role.sh <server-url> <login> <role>
+#
+# Roles: dev, admin, editor, writer, designer, user
+#   'dev' clears the override and hands the role back to INTRA_DEV_IDS.
 #
 # Examples:
-#   ./scripts/set-intra-secret.sh http://localhost:5173/
-#   ./scripts/set-intra-secret.sh https://serpenttimes.example s-s4t2ud-...
+#   ./scripts/set-user-role.sh http://localhost:5173/ mtaheri writer
+#   ./scripts/set-user-role.sh http://localhost:5173/ mtaheri dev
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT_DIR/.env"
+ROLES="dev admin editor writer designer user"
 
 die() {
 	echo "error: $*" >&2
@@ -19,17 +23,25 @@ die() {
 }
 
 usage() {
-	echo "usage: $(basename "$0") <server-url> [client-secret]" >&2
+	echo "usage: $(basename "$0") <server-url> <login> <role>" >&2
+	echo "roles: ${ROLES// /, }" >&2
 	exit 2
 }
 
-[ $# -ge 1 ] && [ $# -le 2 ] || usage
+[ $# -eq 3 ] || usage
 command -v curl >/dev/null || die "curl is required"
 
 SERVER_URL="${1%/}"
 case "$SERVER_URL" in
 	http://* | https://*) ;;
 	*) die "server url must start with http:// or https:// (got '$1')" ;;
+esac
+
+LOGIN="$2"
+ROLE="$3"
+case " $ROLES " in
+	*" $ROLE "*) ;;
+	*) die "unknown role '$ROLE' - pick one of: ${ROLES// /, }" ;;
 esac
 
 # .env values may be quoted and may contain '=' - strip only the outer quotes.
@@ -43,34 +55,22 @@ read_env() {
 	printf '%s' "$value"
 }
 
-UPDATE_KEY="${SCRIPT_KEY:-}"
-if [ -z "$UPDATE_KEY" ]; then
-	UPDATE_KEY="$(read_env SCRIPT_KEY || true)"
+KEY="${SCRIPT_KEY:-}"
+if [ -z "$KEY" ]; then
+	KEY="$(read_env SCRIPT_KEY || true)"
 fi
-if [ -z "$UPDATE_KEY" ]; then
-	read -rsp "SCRIPT_KEY: " UPDATE_KEY
+if [ -z "$KEY" ]; then
+	read -rsp "SCRIPT_KEY: " KEY
 	echo
 fi
-[ -n "$UPDATE_KEY" ] || die "no update key - set SCRIPT_KEY in .env or the environment"
+[ -n "$KEY" ] || die "no key - set SCRIPT_KEY in .env or the environment"
 
-if [ $# -eq 2 ]; then
-	SECRET="$2"
-else
-	read -rsp "42 client secret: " SECRET
-	echo
-fi
-[ -n "$SECRET" ] || die "empty client secret"
-
-# hand-rolled JSON: the secret is opaque, so escape backslashes and quotes.
-escaped="${SECRET//\\/\\\\}"
-escaped="${escaped//\"/\\\"}"
-
-echo "POST $SERVER_URL/api/intra-secret"
+echo "POST $SERVER_URL/api/user-role  ($LOGIN -> $ROLE)"
 response="$(
-	curl -sS -X POST "$SERVER_URL/api/intra-secret" \
-		-H "Authorization: Bearer $UPDATE_KEY" \
+	curl -sS -X POST "$SERVER_URL/api/user-role" \
+		-H "Authorization: Bearer $KEY" \
 		-H "Content-Type: application/json" \
-		-d "{\"secret\":\"$escaped\"}" \
+		-d "{\"login\":\"$LOGIN\",\"role\":\"$ROLE\"}" \
 		-w $'\n%{http_code}'
 )" || die "request failed - is the server running at $SERVER_URL ?"
 
@@ -79,10 +79,13 @@ body="${response%$'\n'*}"
 
 case "$status" in
 	200)
-		echo "ok - secret stored, Intra login should work again"
+		echo "ok - $LOGIN is now '$ROLE'"
 		;;
 	401)
 		die "401 unauthorized - SCRIPT_KEY doesn't match the server's"
+		;;
+	404)
+		die "404 - the server says: ${body:-no details}"
 		;;
 	400)
 		die "400 - the server says: ${body:-no details}"
