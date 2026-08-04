@@ -15,6 +15,13 @@
       "when": 1785090749240,
       "tag": "0001_fresh_dexter_bennett",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785170782335,
+      "tag": "0002_brief_mikhail_rasputin",
+      "breakpoints": true
     }
   ]
 }

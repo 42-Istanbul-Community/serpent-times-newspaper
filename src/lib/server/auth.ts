@@ -4,6 +4,7 @@ import { betterAuth } from 'better-auth/minimal';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { admin, genericOAuth } from 'better-auth/plugins';
+import type { OAuth2UserInfo } from '@better-auth/core/oauth2';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { oauthSecret } from '$lib/server/db/schema';
@@ -22,6 +23,11 @@ export const auth = betterAuth({
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
 	emailAndPassword: { enabled: true },
+	user: {
+		additionalFields: {
+			login: { type: 'string', required: false, input: true }
+		}
+	},
 	plugins: [
 		genericOAuth({
 			config: [
@@ -66,13 +72,15 @@ export const auth = betterAuth({
 							headers: { Authorization: `Bearer ${tokens.accessToken}` }
 						});
 						const profile = await res.json();
-						return {
+						const userInfo: OAuth2UserInfo & { login?: string } = {
 							id: profile.id,
 							email: profile.email,
 							emailVerified: true,
-							name: profile.login,
-							image: profile.image?.link
+							name: profile.usual_full_name || profile.displayname || profile.login,
+							image: profile.image?.link,
+							login: profile.login
 						};
+						return userInfo;
 					}
 				}
 			]
