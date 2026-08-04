@@ -6,7 +6,7 @@ import {
 	pageTemplateAvailability,
 	pageTemplateCategory
 } from '$lib/server/db/schema';
-import { requireUserId } from '$lib/server/require-login';
+import { requireSectionUserId } from '$lib/server/require-login';
 import type { RequestHandler } from './$types';
 
 // GET /api/page-template/<pageID> - fetches one full template row, for
@@ -34,7 +34,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	const id = Number(params.pageID);
 	if (!Number.isInteger(id)) error(400, 'Invalid id');
 
-	const userId = requireUserId(locals);
+	const userId = await requireSectionUserId(locals, 'page');
 	const body = await request.json();
 
 	const patch: Partial<typeof pageTemplate.$inferInsert> = {};

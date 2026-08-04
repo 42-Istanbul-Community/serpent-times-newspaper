@@ -1,19 +1,9 @@
-import { timingSafeEqual } from 'node:crypto';
 import { error, json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { oauthSecret } from '$lib/server/db/schema';
+import { isScriptKeyAuthorized } from '$lib/server/script-key';
 import type { RequestHandler } from './$types';
-
-function isAuthorized(request: Request) {
-	const updateKey = env.INTRA_SECRET_UPDATE_KEY;
-	if (!updateKey) return false;
-
-	const provided = request.headers.get('authorization')?.replace(/^Bearer /, '') ?? '';
-	const a = Buffer.from(provided);
-	const b = Buffer.from(updateKey);
-	return a.length === b.length && timingSafeEqual(a, b);
-}
 
 async function isValidIntraSecret(secret: string) {
 	const res = await fetch('https://api.intra.42.fr/oauth/token', {
@@ -29,7 +19,7 @@ async function isValidIntraSecret(secret: string) {
 }
 
 export const POST: RequestHandler = async ({ request }) => {
-	if (!isAuthorized(request)) return error(401, 'Unauthorized');
+	if (!isScriptKeyAuthorized(request)) return error(401, 'Unauthorized');
 
 	const body = await request.json();
 	const secret = body?.secret;

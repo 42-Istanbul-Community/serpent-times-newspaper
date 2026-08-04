@@ -1,8 +1,21 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
-	import { FileText, Newspaper, PenTool, LogIn, LogOut, Sun, Moon, Menu, X } from '@lucide/svelte';
-	import { NavigationMenu, Switch } from 'bits-ui';
+	import {
+		FileText,
+		Newspaper,
+		PenTool,
+		LogIn,
+		LogOut,
+		Sun,
+		Moon,
+		Menu,
+		X,
+		CircleUser,
+		ShieldUser
+	} from '@lucide/svelte';
+	import { DropdownMenu, NavigationMenu, Switch } from 'bits-ui';
+	import { canAccessSection } from '$lib/access';
 	import { ModeWatcher, mode, setMode } from 'mode-watcher';
 	import { homepageNav } from './homepage-nav.svelte';
 	import type { LayoutServerData } from './$types';
@@ -12,14 +25,31 @@
 	let currentPath = $derived(page.url.pathname);
 	let mobileMenuOpen = $state(false);
 
-	const navItems = [
-		{ path: '/page', label: 'Page Editor', icon: FileText },
-		{ path: '/newspaper', label: 'Newspaper Editor', icon: Newspaper },
-		{ path: '/writer', label: 'Writer', icon: PenTool }
-	];
+	const baseNavItems = [
+		{ path: '/staff/page', label: 'Page Editor', icon: FileText, section: 'page' },
+		{ path: '/staff/newspaper', label: 'Newspaper Editor', icon: Newspaper, section: 'newspaper' },
+		{ path: '/staff/writer', label: 'Writer', icon: PenTool, section: 'writer' }
+	] as const;
+
+	let navItems = $derived([
+		...baseNavItems.filter((item) => canAccessSection(data.role, item.section)),
+		...(data.role === 'dev' ? [{ path: '/staff/dev', label: 'User roles', icon: ShieldUser }] : [])
+	]);
 
 	const activeClass = 'text-slytherin underline decoration-2 underline-offset-4';
 	const inactiveClass = 'text-paper-ink';
+
+	// email-signup accounts have no Intra login, so fall back to the name.
+	let displayName = $derived(data.user?.login ?? data.user?.name ?? '');
+
+	const roleLabels: Record<string, string> = {
+		dev: 'Dev',
+		admin: 'Admin',
+		editor: 'Editor',
+		writer: 'Writer',
+		designer: 'Designer',
+		user: 'User'
+	};
 </script>
 
 <ModeWatcher />
@@ -108,23 +138,48 @@
 
 {#snippet Login()}
 	{#if data.user}
-		<div class="flex items-center gap-3">
-			{#if data.user.image}
-				<img src={data.user.image} alt={data.user.name} class="h-7 w-7 rounded-full object-cover" />
-			{/if}
-			<span class="hidden text-sm text-paper-ink md:inline">{data.user.name}</span>
-			<!-- login/logout actions live on the homepage route (see
-			     +page.server.ts), so target them absolutely from any page. -->
-			<form method="post" action="/?/signOut">
-				<button
-					type="submit"
-					class="flex items-center gap-1.5 text-paper-ink transition-colors duration-300"
+		<DropdownMenu.Root>
+			<DropdownMenu.Trigger
+				aria-label="Account menu for {displayName}"
+				class="flex items-center gap-3 rounded-md px-1 py-1 text-paper-ink transition-colors duration-300 hover:text-slytherin"
+			>
+				<span class="hidden flex-col items-start gap-0.5 text-left md:flex">
+					{#if data.role && data.role !== 'user'}
+						<span class="text-xs leading-none text-ui-text-muted">{roleLabels[data.role]}</span>
+					{/if}
+					<span class="text-base leading-none font-medium">{displayName}</span>
+				</span>
+				{#if data.user.image}
+					<img src={data.user.image} alt="" class="h-9 w-9 rounded-full object-cover" />
+				{:else}
+					<CircleUser class="h-9 w-9" />
+				{/if}
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Portal>
+				<DropdownMenu.Content
+					align="end"
+					sideOffset={8}
+					class="z-50 min-w-36 rounded-md border border-ui-border bg-ui-surface p-1 shadow-md"
 				>
-					<LogOut class="h-4 w-4" />
-					<span class="hidden md:inline">Sign out</span>
-				</button>
-			</form>
-		</div>
+					<!-- login/logout actions live on the homepage route (see
+					     +page.server.ts), so target them absolutely from any page. -->
+					<form method="post" action="/?/signOut">
+						<DropdownMenu.Item>
+							{#snippet child({ props })}
+								<button
+									{...props}
+									type="submit"
+									class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-ui-text-main data-[highlighted]:bg-ui-bg"
+								>
+									<LogOut class="h-4 w-4" />
+									Sign out
+								</button>
+							{/snippet}
+						</DropdownMenu.Item>
+					</form>
+				</DropdownMenu.Content>
+			</DropdownMenu.Portal>
+		</DropdownMenu.Root>
 	{:else}
 		<form method="post" action="/?/signInIntra">
 			<button

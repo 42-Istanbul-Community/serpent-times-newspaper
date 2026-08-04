@@ -1,5 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { resolve } from '$app/paths';
 import { db } from '$lib/server/db';
 import { pageTemplate, pageTemplateCategory } from '$lib/server/db/schema';
@@ -40,6 +40,24 @@ export const actions: Actions = {
 			.values({ userId, title: 'Untitled', category: category as (typeof allowed)[number] })
 			.returning({ id: pageTemplate.id });
 
-		redirect(303, resolve('/(editor)/page/[pageID]', { pageID: String(row.id) }));
+		redirect(303, resolve('/staff/(editor)/page/[pageID]', { pageID: String(row.id) }));
+	},
+	// drafts only - an approved template may already be in use by a paper.
+	delete: async ({ request, locals }) => {
+		const userId = requireUserId(locals);
+		const id = Number((await request.formData()).get('id'));
+		if (!Number.isInteger(id)) return fail(400, { message: 'Invalid id' });
+
+		await db
+			.delete(pageTemplate)
+			.where(
+				and(
+					eq(pageTemplate.id, id),
+					eq(pageTemplate.userId, userId),
+					eq(pageTemplate.availability, 'draft')
+				)
+			);
+
+		return { success: true };
 	}
 };

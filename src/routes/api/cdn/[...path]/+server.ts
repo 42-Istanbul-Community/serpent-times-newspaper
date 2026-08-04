@@ -2,6 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CDN_ROOT } from '$lib/server/cdn-root';
+import { requireSectionUserId } from '$lib/server/require-login';
 import type { RequestHandler } from './$types';
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -66,7 +67,9 @@ export const GET: RequestHandler = async ({ params }) => {
 
 // POST /api/cdn/<group/path?> — multipart form with a `file` field, uploads into that group
 // (missing groups in the path are created automatically)
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async ({ params, request, locals }) => {
+	await requireSectionUserId(locals, 'page', 'newspaper', 'writer');
+
 	const dir = resolveCdnPath(params.path ?? '');
 
 	const form = await request.formData();
@@ -85,7 +88,9 @@ export const POST: RequestHandler = async ({ params, request }) => {
 };
 
 // DELETE /api/cdn/<group/path> — deletes a file, or a whole group (recursively) if given a folder
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async ({ params, locals }) => {
+	await requireSectionUserId(locals, 'page', 'newspaper', 'writer');
+
 	const target = resolveCdnPath(params.path ?? '');
 	if (target === CDN_ROOT) {
 		error(400, 'Cannot delete the CDN root');

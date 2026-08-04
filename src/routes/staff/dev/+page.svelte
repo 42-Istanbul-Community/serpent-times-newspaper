@@ -22,14 +22,14 @@
 		user: 5
 	};
 
-	// Brightness stands in for rank: dev (brightest) down to user (dimmest).
+	// Opacity stands in for rank: dev (solid) down to user (faintest).
 	const roleDotClasses: Record<string, string> = {
-		dev: 'bg-white',
-		admin: 'bg-neutral-300',
-		editor: 'bg-neutral-400',
-		writer: 'bg-neutral-500',
-		designer: 'bg-neutral-600',
-		user: 'bg-neutral-700'
+		dev: 'bg-slytherin',
+		admin: 'bg-slytherin/80',
+		editor: 'bg-slytherin/60',
+		writer: 'bg-slytherin/45',
+		designer: 'bg-slytherin/30',
+		user: 'bg-ui-border-dark'
 	};
 
 	const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -67,122 +67,120 @@
 	);
 </script>
 
-<div class="min-h-screen bg-black px-6 py-10 text-neutral-100 sm:px-10">
-	<div class="mx-auto max-w-4xl">
-		<header class="mb-6">
-			<p class="text-xs font-medium tracking-wide text-neutral-500 uppercase">Staff</p>
-			<h1 class="mt-1 text-2xl font-semibold text-white">User roles</h1>
-			<p class="mt-1 text-xs text-neutral-500">
-				Dev accounts come from INTRA_DEV_IDS and can't be changed here.
-			</p>
-		</header>
+<div class="mx-auto max-w-4xl px-6 py-10 sm:px-8">
+	<header class="mb-6">
+		<p class="text-xs font-medium tracking-wide text-ui-text-muted uppercase">Staff</p>
+		<h1 class="mt-1 text-2xl font-bold text-paper-ink">User roles</h1>
+		<p class="mt-1 text-xs text-ui-text-muted">
+			Dev accounts come from INTRA_DEV_IDS and can't be changed here.
+		</p>
+	</header>
 
-		<div class="overflow-hidden rounded-lg border border-neutral-800">
-			<table class="w-full text-left text-sm">
-				<thead class="bg-neutral-900">
-					<tr class="text-xs text-neutral-500 uppercase">
-						<th class="px-4 py-3 font-medium"></th>
-						<th class="px-4 py-3 font-medium">
-							<button
-								type="button"
-								class="flex items-center gap-1 hover:text-neutral-200"
-								onclick={() => toggleSort('name')}
-							>
-								Name
-								{#if sortKey === 'name'}<span>{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
-							</button>
-						</th>
-						<th class="px-4 py-3 font-medium">
-							<button
-								type="button"
-								class="flex items-center gap-1 hover:text-neutral-200"
-								onclick={() => toggleSort('role')}
-							>
-								Role
-								{#if sortKey === 'role'}<span>{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
-							</button>
-						</th>
-						<th class="px-4 py-3 font-medium">
-							<button
-								type="button"
-								class="flex items-center gap-1 hover:text-neutral-200"
-								onclick={() => toggleSort('joined')}
-							>
-								Joined
-								{#if sortKey === 'joined'}<span>{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
-							</button>
-						</th>
-						<th class="px-4 py-3 font-medium">Change role</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-neutral-800">
-					{#each sortedUsers as u (u.id)}
-						<tr class="hover:bg-neutral-900/60">
-							<td class="px-4 py-3">
-								{#if u.image}
-									<img
-										src={u.image}
-										alt={u.name}
-										class="h-8 w-8 rounded-full object-cover ring-1 ring-neutral-700"
-									/>
-								{:else}
-									<div
-										class="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-800 text-xs font-medium text-neutral-400 ring-1 ring-neutral-700"
-									>
-										{initials(u.name)}
-									</div>
-								{/if}
-							</td>
-							<td class="px-4 py-3">
-								<div class="font-medium text-neutral-100">{u.name}</div>
-								{#if u.login}
-									<div class="text-xs text-neutral-500">@{u.login}</div>
-								{/if}
-							</td>
-							<td class="px-4 py-3">
-								<span
-									class="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2 py-1 text-xs font-medium text-neutral-300 ring-1 ring-white/10"
+	<div class="overflow-hidden rounded-lg border border-ui-border">
+		<table class="w-full text-left text-sm">
+			<thead class="bg-ui-bg">
+				<tr class="text-xs text-ui-text-muted uppercase">
+					<th class="px-4 py-3 font-medium"></th>
+					<th class="px-4 py-3 font-medium">
+						<button
+							type="button"
+							class="flex items-center gap-1 hover:text-paper-ink"
+							onclick={() => toggleSort('name')}
+						>
+							Name
+							{#if sortKey === 'name'}<span>{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
+						</button>
+					</th>
+					<th class="px-4 py-3 font-medium">
+						<button
+							type="button"
+							class="flex items-center gap-1 hover:text-paper-ink"
+							onclick={() => toggleSort('role')}
+						>
+							Role
+							{#if sortKey === 'role'}<span>{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
+						</button>
+					</th>
+					<th class="px-4 py-3 font-medium">
+						<button
+							type="button"
+							class="flex items-center gap-1 hover:text-paper-ink"
+							onclick={() => toggleSort('joined')}
+						>
+							Joined
+							{#if sortKey === 'joined'}<span>{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
+						</button>
+					</th>
+					<th class="px-4 py-3 font-medium">Change role</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-ui-border-light">
+				{#each sortedUsers as u (u.id)}
+					<tr class="hover:bg-ui-bg/60">
+						<td class="px-4 py-3">
+							{#if u.image}
+								<img
+									src={u.image}
+									alt={u.name}
+									class="h-8 w-8 rounded-full object-cover ring-1 ring-ui-border"
+								/>
+							{:else}
+								<div
+									class="flex h-8 w-8 items-center justify-center rounded-full bg-ui-bg text-xs font-medium text-ui-text-muted ring-1 ring-ui-border"
 								>
-									<span
-										class="h-1.5 w-1.5 rounded-full {roleDotClasses[u.role] ?? roleDotClasses.user}"
-									></span>
-									{roleLabels[u.role] ?? u.role}
-								</span>
-							</td>
-							<td class="px-4 py-3 text-neutral-400">{dateFormatter.format(u.createdAt)}</td>
-							<td class="px-4 py-3">
-								{#if u.role === 'dev'}
-									<span class="text-xs text-neutral-600">—</span>
-								{:else}
-									<form
-										method="POST"
-										action="?/updateRole"
-										use:enhance
-										class="flex items-center gap-2"
+									{initials(u.name)}
+								</div>
+							{/if}
+						</td>
+						<td class="px-4 py-3">
+							<div class="font-medium text-paper-ink">{u.name}</div>
+							{#if u.login}
+								<div class="text-xs text-ui-text-muted">@{u.login}</div>
+							{/if}
+						</td>
+						<td class="px-4 py-3">
+							<span
+								class="inline-flex items-center gap-1.5 rounded-md bg-ui-bg px-2 py-1 text-xs font-medium text-ui-text-sub ring-1 ring-ui-border"
+							>
+								<span
+									class="h-1.5 w-1.5 rounded-full {roleDotClasses[u.role] ?? roleDotClasses.user}"
+								></span>
+								{roleLabels[u.role] ?? u.role}
+							</span>
+						</td>
+						<td class="px-4 py-3 text-ui-text-sub">{dateFormatter.format(u.createdAt)}</td>
+						<td class="px-4 py-3">
+							{#if u.role === 'dev'}
+								<span class="text-xs text-ui-text-muted">—</span>
+							{:else}
+								<form
+									method="POST"
+									action="?/updateRole"
+									use:enhance
+									class="flex items-center gap-2"
+								>
+									<input type="hidden" name="userId" value={u.id} />
+									<select
+										name="role"
+										value={u.dbRole ?? 'user'}
+										class="rounded-md border-ui-border bg-ui-surface py-1 text-xs text-ui-text-main focus:border-slytherin focus:ring-slytherin"
 									>
-										<input type="hidden" name="userId" value={u.id} />
-										<select
-											name="role"
-											value={u.dbRole ?? 'user'}
-											class="rounded-md border-neutral-700 bg-neutral-900 py-1 text-xs text-neutral-200 focus:border-neutral-400 focus:ring-neutral-400"
-										>
-											{#each data.assignableRoles as role (role)}
-												<option value={role}>{roleLabels[role] ?? role}</option>
-											{/each}
-										</select>
-										<button
-											type="submit"
-											class="rounded-md bg-neutral-800 px-2.5 py-1 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-700"
-										>
-											Save
-										</button>
-									</form>
-								{/if}
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
+										{#each data.assignableRoles as role (role)}
+											<option value={role}>{roleLabels[role] ?? role}</option>
+										{/each}
+									</select>
+									<button
+										type="submit"
+										class="rounded-md bg-slytherin px-2.5 py-1 text-xs font-medium text-white transition-colors hover:opacity-90"
+									>
+										Save
+									</button>
+								</form>
+							{/if}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	</div>
 </div>

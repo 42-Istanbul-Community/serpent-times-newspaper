@@ -29,6 +29,15 @@ class PaperSync {
 	status = $state<ArticleRow['status']>('draft');
 
 	hydrate(row: ArticleRow, templates: TemplateRow[], pickableTemplates: TemplateRow[]) {
+		// design data, not the writer's own work - refresh it on every load,
+		// including re-runs for a paper that's already hydrated, so a template
+		// approved while this page was open shows up without a hard reload.
+		// Merged, never replaced, so a just-picked template that hasn't been
+		// autosaved yet (addPage registers it client-side) isn't dropped.
+		const known = new Set(paperState.templates.map((t) => t.id));
+		paperState.templates.push(...templates.filter((t) => !known.has(t.id)));
+		paperState.pickableTemplates = pickableTemplates;
+
 		if (this.#hydratedId === row.id) return;
 		clearTimeout(this.#timer);
 		const pages = row.pages as ArticlePage[];
@@ -37,7 +46,6 @@ class PaperSync {
 		paperState.title = row.title;
 		paperState.pages = pages;
 		paperState.templates = templates;
-		paperState.pickableTemplates = pickableTemplates;
 		paperState.activePageId = pages[0]?.id ?? null;
 
 		this.#hydratedId = row.id;

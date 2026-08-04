@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, newspaperEdition, pageTemplate } from '$lib/server/db/schema';
-import { requireUserId } from '$lib/server/require-login';
+import { requireSectionUserId } from '$lib/server/require-login';
 import type { RequestHandler } from './$types';
 
 const CREATABLE_CATEGORIES = ['cover', 'index', 'citation'] as const;
@@ -17,7 +17,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	const editionId = Number(params.editionID);
 	if (!Number.isInteger(editionId)) error(400, 'Invalid id');
 
-	const userId = requireUserId(locals);
+	const userId = await requireSectionUserId(locals, 'newspaper');
 	const [edition] = await db
 		.select({ id: newspaperEdition.id })
 		.from(newspaperEdition)
@@ -41,7 +41,6 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		.where(
 			and(
 				eq(pageTemplate.id, pageTemplateId),
-				eq(pageTemplate.userId, userId),
 				eq(pageTemplate.category, category as (typeof CREATABLE_CATEGORIES)[number]),
 				inArray(pageTemplate.availability, ['used', 'unused'])
 			)

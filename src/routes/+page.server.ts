@@ -3,7 +3,7 @@ import { desc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { newspaperEdition } from '$lib/server/db/schema';
 import { auth } from '$lib/server/auth';
-import { resolveRole } from '$lib/server/roles';
+import { getDevLogins } from '$lib/server/roles';
 import type { Actions, PageServerLoad } from './$types';
 
 // homepage: public reading list of published newspaper editions, newest
@@ -21,14 +21,13 @@ export const load: PageServerLoad = async (event) => {
 		.where(eq(newspaperEdition.status, 'published'))
 		.orderBy(desc(newspaperEdition.updatedAt));
 
-	const user = event.locals.user;
-	if (!user) return { editions, user: null, role: null };
+	// failed auth flows are redirected here with ?error=<code> (see
+	// onAPIError.errorURL in $lib/server/auth.ts). Only then do we pay for the
+	// dev lookup that fills in the toast's "who to ping" line.
+	const devLogins = event.url.searchParams.has('error') ? await getDevLogins() : [];
 
-	// The admin plugin adds `role` to the user row at runtime, but the base
-	// `User` type from 'better-auth' doesn't declare it.
-	const userWithRole = user as typeof user & { role?: string | null };
-
-	return { editions, user, role: await resolveRole(userWithRole) };
+	// `user` and `role` come from the layout load, which every page inherits.
+	return { editions, devLogins };
 };
 
 export const actions: Actions = {
@@ -36,7 +35,11 @@ export const actions: Actions = {
 		const { url } = await auth.api.signInWithOAuth2({
 			body: {
 				providerId: 'intra',
-				callbackURL: '/'
+				callbackURL: '/',
+				// a failed callback (bad secret, denied consent, ...) comes back
+				// here with ?error=<code> instead of better-auth's own error page,
+				// so the layout can surface it as a toast.
+				errorCallbackURL: '/'
 			}
 		});
 

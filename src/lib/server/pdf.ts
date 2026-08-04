@@ -22,18 +22,32 @@ function getBrowser(): Promise<Browser> {
 export async function renderPdf(
 	origin: string,
 	targetPath: string,
-	pdfOptions: PDFOptions = {}
+	pdfOptions: PDFOptions = {},
+	cookie?: string
 ): Promise<Buffer> {
 	const browser = await getBrowser();
 	const page = await browser.newPage();
 	try {
+		// the editor routes are behind a session, and a headless tab has none -
+		// it would just be redirected to the homepage and print that. Replaying
+		// the triggering request's cookie renders the page as its own user.
+		// Per-page headers, not browser-wide: the browser is shared.
+		if (cookie) await page.setExtraHTTPHeaders({ cookie });
 		// a fresh headless tab has no stored theme preference, so mode-watcher
 		// falls back to matching the OS/headless default color scheme - which
 		// can resolve to dark, painting the app's near-black dark-mode
 		// background wherever nothing else is drawn (e.g. the trailing sliver
 		// page below). Force light so print output is never theme-dependent.
 		await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
-		await page.goto(`${origin}${targetPath}`, { waitUntil: 'networkidle0' });
+		const response = await page.goto(`${origin}${targetPath}`, { waitUntil: 'networkidle0' });
+
+		// a guard redirect would otherwise be printed as a perfectly valid PDF
+		// of the wrong page.
+		const landed = new URL(response?.url() ?? page.url()).pathname;
+		if (landed !== targetPath) {
+			throw new Error(`PDF render of ${targetPath} was redirected to ${landed}`);
+		}
+
 		return Buffer.from(await page.pdf({ printBackground: true, ...pdfOptions }));
 	} finally {
 		await page.close();
@@ -52,10 +66,21 @@ export async function saveEditionPdf(editionId: number, pdf: Buffer): Promise<vo
 // shared by both the on-demand Download PDF endpoint and the publish-time
 // bake below - matches PAPER_WIDTH/PAPER_HEIGHT in page-renderer.svelte
 // exactly, one PDF page per 720x960 page, no scaling mismatch.
-export function renderEditionPdf(origin: string, editionId: number): Promise<Buffer> {
-	return renderPdf(origin, `/newspaper/${editionId}`, {
-		width: '720px',
-		height: '960px',
-		margin: { top: '0', bottom: '0', left: '0', right: '0' }
-	});
+export function renderEditionPdf(
+	origin: string,
+	editionId: number,
+	cookie: string
+): Promise<Buffer> {
+	if (!cookie) throw new Error('renderEditionPdf needs the requesting session cookie');
+
+	return renderPdf(
+		origin,
+		`/staff/newspaper/${editionId}`,
+		{
+			width: '720px',
+			height: '960px',
+			margin: { top: '0', bottom: '0', left: '0', right: '0' }
+		},
+		cookie
+	);
 }

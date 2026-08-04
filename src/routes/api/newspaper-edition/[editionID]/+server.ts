@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { newspaperEdition, publicationStatus } from '$lib/server/db/schema';
-import { requireUserId } from '$lib/server/require-login';
+import { requireSectionUserId } from '$lib/server/require-login';
 import { renderEditionPdf, saveEditionPdf } from '$lib/server/pdf';
 import type { RequestHandler } from './$types';
 
@@ -15,7 +15,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals, url }) =>
 	const id = Number(params.editionID);
 	if (!Number.isInteger(id)) error(400, 'Invalid id');
 
-	const userId = requireUserId(locals);
+	const userId = await requireSectionUserId(locals, 'newspaper');
 	const body = await request.json();
 
 	const patch: Partial<typeof newspaperEdition.$inferInsert> = {};
@@ -53,7 +53,8 @@ export const PATCH: RequestHandler = async ({ params, request, locals, url }) =>
 	// still a manual fallback.
 	if (patch.status === 'published') {
 		try {
-			await saveEditionPdf(id, await renderEditionPdf(url.origin, id));
+			const cookie = request.headers.get('cookie') ?? '';
+			await saveEditionPdf(id, await renderEditionPdf(url.origin, id, cookie));
 		} catch {
 			// best-effort, see above
 		}

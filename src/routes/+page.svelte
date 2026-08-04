@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Newspaper } from '@lucide/svelte';
 	import { homepageNav } from './homepage-nav.svelte';
+	import AuthErrorToast from './auth-error-toast.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -43,6 +44,10 @@
 		selectedEdition ? `/api/cdn/newspaper/${selectedEdition.id}/newspaper.pdf` : null
 	);
 </script>
+
+<!-- failed sign-ins always land back here (see onAPIError.errorURL in
+     $lib/server/auth.ts), so the toast lives on the homepage. -->
+<AuthErrorToast devLogins={data.devLogins} />
 
 <div class="mx-auto flex max-w-7xl flex-col gap-4 md:grid md:h-full md:grid-cols-12 md:gap-6">
 	<div class="h-full shrink-0 md:col-span-10 md:h-full md:min-h-0">

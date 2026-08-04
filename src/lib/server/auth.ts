@@ -23,6 +23,10 @@ export const auth = betterAuth({
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
 	emailAndPassword: { enabled: true },
+	// without this, any auth failure lands on better-auth's own full-page
+	// error screen at /api/auth/error (it prints the raw error code in dev).
+	// Send them home instead, with ?error=<code> for the toast to pick up.
+	onAPIError: { errorURL: '/' },
 	user: {
 		additionalFields: {
 			login: { type: 'string', required: false, input: true }
@@ -53,7 +57,10 @@ export const auth = betterAuth({
 							})
 						});
 						if (!res.ok) {
-							throw new Error(`Intra token exchange failed: ${res.status} ${await res.text()}`);
+							// message stays vague on purpose - the provider's body can
+							// carry client id/secret hints. The UI only ever learns that
+							// sign-in failed (see the ?error= toast in +layout.svelte).
+							throw new Error('Intra sign-in failed');
 						}
 						const data = await res.json();
 						return {
