@@ -34,14 +34,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			: [];
 
 	// pickable templates per role - approved (used/unused, never draft) only,
-	// same rule the writer's own template picker uses.
+	// and from any designer, same rule the writer's template picker uses.
 	const approved = inArray(pageTemplate.availability, ['used', 'unused'] as const);
 	const [pickableCover, pickableIndex, pickableCitation] = await Promise.all(
 		(['cover', 'index', 'citation'] as const).map((category) =>
 			db
 				.select()
 				.from(pageTemplate)
-				.where(and(eq(pageTemplate.userId, userId), eq(pageTemplate.category, category), approved))
+				.where(and(eq(pageTemplate.category, category), approved))
 		)
 	);
 

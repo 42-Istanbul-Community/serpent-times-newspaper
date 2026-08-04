@@ -1,4 +1,4 @@
-import { redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { resolve } from '$app/paths';
 import { db } from '$lib/server/db';
@@ -33,5 +33,24 @@ export const actions: Actions = {
 			.returning({ id: article.id });
 
 		redirect(303, resolve('/staff/(editor)/writer/[paperID]', { paperID: String(row.id) }));
+	},
+	// drafts only - a published paper may already sit in an edition.
+	delete: async ({ request, locals }) => {
+		const userId = requireUserId(locals);
+		const id = Number((await request.formData()).get('id'));
+		if (!Number.isInteger(id)) return fail(400, { message: 'Invalid id' });
+
+		await db
+			.delete(article)
+			.where(
+				and(
+					eq(article.id, id),
+					eq(article.userId, userId),
+					eq(article.category, 'page'),
+					eq(article.status, 'draft')
+				)
+			);
+
+		return { success: true };
 	}
 };

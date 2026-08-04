@@ -2,7 +2,16 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import { Select, Tabs } from 'bits-ui';
-	import { BookOpen, ChevronDown, FileText, Image, ListOrdered, Plus, Quote } from '@lucide/svelte';
+	import {
+		BookOpen,
+		ChevronDown,
+		FileText,
+		Image,
+		ListOrdered,
+		Plus,
+		Quote,
+		Trash2
+	} from '@lucide/svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -116,21 +125,42 @@
 {/snippet}
 
 {#snippet templateCard(template: TemplateSummary)}
-	<a
-		href={resolve('/staff/(editor)/page/[pageID]', { pageID: String(template.id) })}
-		class="flex flex-col gap-2 rounded-md border border-paper-rule bg-paper-surface p-2 transition-colors hover:border-slytherin"
-	>
-		<div
-			class="flex aspect-3/4 items-center justify-center overflow-hidden rounded border border-ui-border bg-ui-bg text-ui-text-muted {template.cdnUrl
-				? ''
-				: 'border-dashed'}"
+	<div class="relative">
+		{#if template.availability === 'draft'}
+			{@render deleteButton(template.id, template.title)}
+		{/if}
+		<a
+			href={resolve('/staff/(editor)/page/[pageID]', { pageID: String(template.id) })}
+			class="flex flex-col gap-2 rounded-md border border-paper-rule bg-paper-surface p-2 transition-colors hover:border-slytherin"
 		>
-			{#if template.cdnUrl}
-				<img src={template.cdnUrl} alt="" class="h-full w-full object-cover" />
-			{:else}
-				<Image class="h-6 w-6" />
-			{/if}
-		</div>
-		<span class="truncate text-sm font-medium text-paper-ink">{template.title}</span>
-	</a>
+			<div
+				class="flex aspect-3/4 items-center justify-center overflow-hidden rounded border border-ui-border bg-ui-bg text-ui-text-muted {template.cdnUrl
+					? ''
+					: 'border-dashed'}"
+			>
+				{#if template.cdnUrl}
+					<img src={template.cdnUrl} alt="" class="h-full w-full object-cover" />
+				{:else}
+					<Image class="h-6 w-6" />
+				{/if}
+			</div>
+			<span class="truncate text-sm font-medium text-paper-ink">{template.title}</span>
+		</a>
+	</div>
+{/snippet}
+
+{#snippet deleteButton(id: number, title: string)}
+	<form method="POST" action="?/delete" use:enhance class="absolute top-3.5 right-3.5 z-10">
+		<input type="hidden" name="id" value={id} />
+		<button
+			type="submit"
+			aria-label="Delete {title}"
+			onclick={(e) => {
+				if (!confirm(`Delete "${title}"? This can't be undone.`)) e.preventDefault();
+			}}
+			class="rounded-md bg-ui-surface/90 p-1 text-ui-text-muted shadow-sm transition-colors hover:text-danger"
+		>
+			<Trash2 class="h-4 w-4" />
+		</button>
+	</form>
 {/snippet}

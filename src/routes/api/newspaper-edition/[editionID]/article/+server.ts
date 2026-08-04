@@ -41,7 +41,6 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		.where(
 			and(
 				eq(pageTemplate.id, pageTemplateId),
-				eq(pageTemplate.userId, userId),
 				eq(pageTemplate.category, category as (typeof CREATABLE_CATEGORIES)[number]),
 				inArray(pageTemplate.availability, ['used', 'unused'])
 			)

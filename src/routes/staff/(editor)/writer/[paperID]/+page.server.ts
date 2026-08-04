@@ -27,16 +27,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// pickable for a NEW page: category='page' only (cover/index/citation
 	// are filled by other flows), and not drafts - a draft template's
-	// element ids are unstable while its designer is still editing.
+	// element ids are unstable while its designer is still editing. Not
+	// scoped by owner: templates are designed by designers and written
+	// against by writers, so approving one publishes it to every writer.
 	const pickableTemplates = await db
 		.select()
 		.from(pageTemplate)
 		.where(
-			and(
-				eq(pageTemplate.userId, userId),
-				eq(pageTemplate.category, 'page'),
-				inArray(pageTemplate.availability, ['used', 'unused'])
-			)
+			and(eq(pageTemplate.category, 'page'), inArray(pageTemplate.availability, ['used', 'unused']))
 		);
 
 	return { article: articleRow, templates, pickableTemplates };

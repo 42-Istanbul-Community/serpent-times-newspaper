@@ -52,6 +52,13 @@ class EditionSync {
 		pickableCitation: TemplateRow[],
 		availablePapers: { id: number; title: string; cdnUrl: string | null }[]
 	) {
+		// see paper-sync's hydrate: the pickable lists are design data, so they
+		// refresh on every load, not just the first one for this edition.
+		editionState.pickableCover = pickableCover;
+		editionState.pickableIndex = pickableIndex;
+		editionState.pickableCitation = pickableCitation;
+		editionState.availablePapers = availablePapers;
+
 		if (this.#hydratedId === row.id) return;
 		clearTimeout(this.#timer);
 
