@@ -40,6 +40,6 @@ export const actions: Actions = {
 			.values({ userId, title: 'Untitled', category: category as (typeof allowed)[number] })
 			.returning({ id: pageTemplate.id });
 
-		redirect(303, resolve('/(editor)/page/[pageID]', { pageID: String(row.id) }));
+		redirect(303, resolve('/staff/(editor)/page/[pageID]', { pageID: String(row.id) }));
 	}
 };

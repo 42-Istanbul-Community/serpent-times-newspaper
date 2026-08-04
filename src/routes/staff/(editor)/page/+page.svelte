@@ -117,7 +117,7 @@
 
 {#snippet templateCard(template: TemplateSummary)}
 	<a
-		href={resolve('/(editor)/page/[pageID]', { pageID: String(template.id) })}
+		href={resolve('/staff/(editor)/page/[pageID]', { pageID: String(template.id) })}
 		class="flex flex-col gap-2 rounded-md border border-paper-rule bg-paper-surface p-2 transition-colors hover:border-slytherin"
 	>
 		<div

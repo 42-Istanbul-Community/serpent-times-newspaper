@@ -11,9 +11,11 @@
 		Moon,
 		Menu,
 		X,
-		CircleUser
+		CircleUser,
+		ShieldUser
 	} from '@lucide/svelte';
 	import { DropdownMenu, NavigationMenu, Switch } from 'bits-ui';
+	import { canAccessSection } from '$lib/access';
 	import { ModeWatcher, mode, setMode } from 'mode-watcher';
 	import { homepageNav } from './homepage-nav.svelte';
 	import type { LayoutServerData } from './$types';
@@ -23,11 +25,16 @@
 	let currentPath = $derived(page.url.pathname);
 	let mobileMenuOpen = $state(false);
 
-	const navItems = [
-		{ path: '/page', label: 'Page Editor', icon: FileText },
-		{ path: '/newspaper', label: 'Newspaper Editor', icon: Newspaper },
-		{ path: '/writer', label: 'Writer', icon: PenTool }
-	];
+	const baseNavItems = [
+		{ path: '/staff/page', label: 'Page Editor', icon: FileText, section: 'page' },
+		{ path: '/staff/newspaper', label: 'Newspaper Editor', icon: Newspaper, section: 'newspaper' },
+		{ path: '/staff/writer', label: 'Writer', icon: PenTool, section: 'writer' }
+	] as const;
+
+	let navItems = $derived([
+		...baseNavItems.filter((item) => canAccessSection(data.role, item.section)),
+		...(data.role === 'dev' ? [{ path: '/staff/dev', label: 'User roles', icon: ShieldUser }] : [])
+	]);
 
 	const activeClass = 'text-slytherin underline decoration-2 underline-offset-4';
 	const inactiveClass = 'text-paper-ink';

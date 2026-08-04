@@ -64,7 +64,7 @@
 
 {#snippet editionCard(e: EditionSummary)}
 	<a
-		href={resolve('/(editor)/newspaper/[editionID]', { editionID: String(e.id) })}
+		href={resolve('/staff/(editor)/newspaper/[editionID]', { editionID: String(e.id) })}
 		class="flex flex-col gap-2 rounded-md border border-paper-rule bg-paper-surface p-2 transition-colors hover:border-slytherin"
 	>
 		<div

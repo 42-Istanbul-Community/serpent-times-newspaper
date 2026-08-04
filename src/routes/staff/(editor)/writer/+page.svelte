@@ -64,7 +64,7 @@
 
 {#snippet paperCard(p: PaperSummary)}
 	<a
-		href={resolve('/(editor)/writer/[paperID]', { paperID: String(p.id) })}
+		href={resolve('/staff/(editor)/writer/[paperID]', { paperID: String(p.id) })}
 		class="flex flex-col gap-2 rounded-md border border-paper-rule bg-paper-surface p-2 transition-colors hover:border-slytherin"
 	>
 		<div

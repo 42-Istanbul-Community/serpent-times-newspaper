@@ -32,6 +32,6 @@ export const actions: Actions = {
 			.values({ userId, title: 'Untitled', pages: [] })
 			.returning({ id: article.id });
 
-		redirect(303, resolve('/(editor)/writer/[paperID]', { paperID: String(row.id) }));
+		redirect(303, resolve('/staff/(editor)/writer/[paperID]', { paperID: String(row.id) }));
 	}
 };
