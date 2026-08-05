@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Newspaper } from '@lucide/svelte';
+	import { LogIn, Newspaper } from '@lucide/svelte';
 	import { homepageNav } from './homepage-nav.svelte';
 	import AuthErrorToast from './auth-error-toast.svelte';
 	import type { PageData } from './$types';
@@ -12,6 +12,8 @@
 	let PDFViewer = $state<typeof import('@embedpdf/svelte-pdf-viewer').PDFViewer>();
 	let ZoomMode = $state<typeof import('@embedpdf/svelte-pdf-viewer').ZoomMode>();
 	onMount(async () => {
+		// signed out there is no PDF to open, so don't ship the viewer either.
+		if (!data.user) return;
 		const mod = await import('@embedpdf/svelte-pdf-viewer');
 		PDFViewer = mod.PDFViewer;
 		ZoomMode = mod.ZoomMode;
@@ -41,7 +43,7 @@
 		data.editions.find((e) => e.id === homepageNav.selectedId) ?? data.editions[0] ?? null
 	);
 	let pdfUrl = $derived(
-		selectedEdition ? `/api/cdn/newspaper/${selectedEdition.id}/newspaper.pdf` : null
+		data.user && selectedEdition ? `/api/cdn/newspaper/${selectedEdition.id}/newspaper.pdf` : null
 	);
 </script>
 
@@ -51,7 +53,9 @@
 
 <div class="mx-auto flex max-w-7xl flex-col gap-4 md:grid md:h-full md:grid-cols-12 md:gap-6">
 	<div class="h-full shrink-0 md:col-span-10 md:h-full md:min-h-0">
-		{#if pdfUrl}
+		{#if !data.user}
+			{@render lockedPreview()}
+		{:else if pdfUrl}
 			{@render viewer(pdfUrl)}
 		{:else}
 			{@render emptyState()}
@@ -78,6 +82,46 @@
 	{/if}
 {/snippet}
 
+{#snippet lockedPreview()}
+	<!-- `coverUrl` arrives already blurred (see $lib/server/preview.ts) - no
+	     CSS filter here on purpose, that would be reversible from devtools. -->
+	<div
+		class="relative flex min-h-[70vh] items-center justify-center overflow-hidden rounded-md border border-paper-rule bg-paper-surface md:h-full md:min-h-0"
+	>
+		{#if selectedEdition?.coverUrl}
+			<img
+				src={selectedEdition.coverUrl}
+				alt=""
+				class="absolute inset-0 h-full w-full object-contain p-4"
+			/>
+		{/if}
+
+		<div class="absolute inset-0 flex items-center justify-center p-4">
+			<div
+				class="flex max-w-md flex-col items-center gap-4 rounded-lg border border-ui-border bg-ui-surface/95 px-6 py-7 text-center shadow-xl backdrop-blur-sm"
+			>
+				<Newspaper class="h-8 w-8 text-slytherin" />
+				<h1 class="text-xl font-bold text-paper-ink">SerpentTimes</h1>
+				<p class="text-sm text-ui-text-sub">
+					A newspaper made by the students of 42 Istanbul, for the students of 42 Istanbul.
+				</p>
+				<p class="text-sm text-ui-text-muted">
+					Log in with Intra to read {selectedEdition ? 'the full edition' : 'it'}.
+				</p>
+				<form method="post" action="?/signInIntra">
+					<button
+						type="submit"
+						class="flex items-center gap-2 rounded-md bg-slytherin px-4 py-2 text-sm font-medium text-paper-bg transition-opacity hover:opacity-90"
+					>
+						<LogIn class="h-4 w-4" />
+						Login with Intra
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+{/snippet}
+
 {#snippet emptyState()}
 	<div
 		class="flex h-full items-center justify-center rounded-md border border-dashed border-paper-rule text-sm text-ui-text-muted"
@@ -96,12 +140,12 @@
 			: 'border-transparent hover:border-paper-rule'}"
 	>
 		<div
-			class="flex aspect-3/4 items-center justify-center overflow-hidden rounded border border-ui-border bg-ui-bg text-ui-text-muted {edition.cdnUrl
+			class="flex aspect-3/4 items-center justify-center overflow-hidden rounded border border-ui-border bg-ui-bg text-ui-text-muted {edition.coverUrl
 				? ''
 				: 'border-dashed'}"
 		>
-			{#if edition.cdnUrl}
-				<img src={edition.cdnUrl} alt="" class="h-full w-full object-cover" />
+			{#if edition.coverUrl}
+				<img src={edition.coverUrl} alt="" class="h-full w-full object-cover" />
 			{:else}
 				<Newspaper class="h-5 w-5" />
 			{/if}

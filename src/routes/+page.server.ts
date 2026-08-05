@@ -11,7 +11,7 @@ import type { Actions, PageServerLoad } from './$types';
 // newspaper-edition PATCH endpoint's publish hook), so unpublished ones
 // have nothing to read. Shown to everyone, logged in or not.
 export const load: PageServerLoad = async (event) => {
-	const editions = await db
+	const rows = await db
 		.select({
 			id: newspaperEdition.id,
 			title: newspaperEdition.title,
@@ -20,6 +20,20 @@ export const load: PageServerLoad = async (event) => {
 		.from(newspaperEdition)
 		.where(eq(newspaperEdition.status, 'published'))
 		.orderBy(desc(newspaperEdition.updatedAt));
+
+	// signed out, every cover here is swapped for the server-blurred one, so
+	// the sharp cover never reaches the browser (the PDF itself is refused by
+	// /api/cdn). A null cdnUrl means no cover exists to blur either.
+	const signedIn = Boolean(event.locals.user);
+	const editions = rows.map((edition) => ({
+		id: edition.id,
+		title: edition.title,
+		coverUrl: edition.cdnUrl
+			? signedIn
+				? edition.cdnUrl
+				: `/api/newspaper-edition/${edition.id}/preview`
+			: null
+	}));
 
 	// failed auth flows are redirected here with ?error=<code> (see
 	// onAPIError.errorURL in $lib/server/auth.ts). Only then do we pay for the

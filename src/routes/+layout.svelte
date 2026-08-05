@@ -245,8 +245,8 @@
 							? 'border-slytherin'
 							: 'border-ui-border'}"
 					>
-						{#if edition.cdnUrl}
-							<img src={edition.cdnUrl} alt="" class="h-full w-full object-cover" />
+						{#if edition.coverUrl}
+							<img src={edition.coverUrl} alt="" class="h-full w-full object-cover" />
 						{:else}
 							<Newspaper class="h-8 w-8" />
 						{/if}

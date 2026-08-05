@@ -1,17 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import puppeteer, { type Browser, type PDFOptions } from 'puppeteer';
+import { type PDFOptions } from 'puppeteer';
 import { CDN_ROOT } from '$lib/server/cdn-root';
-
-// One headless Chromium instance, launched lazily and reused across every
-// PDF request in this process - launching a fresh browser per request would
-// make every export pay Chromium's ~1s+ startup cost.
-let browserPromise: Promise<Browser> | null = null;
-
-function getBrowser(): Promise<Browser> {
-	if (!browserPromise) browserPromise = puppeteer.launch({ headless: true });
-	return browserPromise;
-}
+import { getBrowser } from '$lib/server/browser';
 
 // Renders a same-origin app route to a PDF buffer by actually navigating a
 // headless tab to it and printing - reuses whatever Svelte component
