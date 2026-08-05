@@ -2,43 +2,20 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { type PDFOptions } from 'puppeteer';
 import { CDN_ROOT } from '$lib/server/cdn-root';
-import { getBrowser } from '$lib/server/browser';
+import { openAppPage } from '$lib/server/browser';
 
 // Renders a same-origin app route to a PDF buffer by actually navigating a
-// headless tab to it and printing - reuses whatever Svelte component
-// renders that route exactly as a browser would, no separate PDF-layout
-// code to keep in sync. `origin` must come from the triggering request's
-// own `url.origin` (never a client-supplied value) so this can only ever
-// hit routes on the server it's already running on.
+// headless tab to it and printing - reuses whatever Svelte component renders
+// that route exactly as a browser would, no separate PDF-layout code to keep
+// in sync.
 export async function renderPdf(
 	origin: string,
 	targetPath: string,
 	pdfOptions: PDFOptions = {},
 	cookie?: string
 ): Promise<Buffer> {
-	const browser = await getBrowser();
-	const page = await browser.newPage();
+	const page = await openAppPage(origin, targetPath, { cookie });
 	try {
-		// the editor routes are behind a session, and a headless tab has none -
-		// it would just be redirected to the homepage and print that. Replaying
-		// the triggering request's cookie renders the page as its own user.
-		// Per-page headers, not browser-wide: the browser is shared.
-		if (cookie) await page.setExtraHTTPHeaders({ cookie });
-		// a fresh headless tab has no stored theme preference, so mode-watcher
-		// falls back to matching the OS/headless default color scheme - which
-		// can resolve to dark, painting the app's near-black dark-mode
-		// background wherever nothing else is drawn (e.g. the trailing sliver
-		// page below). Force light so print output is never theme-dependent.
-		await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
-		const response = await page.goto(`${origin}${targetPath}`, { waitUntil: 'networkidle0' });
-
-		// a guard redirect would otherwise be printed as a perfectly valid PDF
-		// of the wrong page.
-		const landed = new URL(response?.url() ?? page.url()).pathname;
-		if (landed !== targetPath) {
-			throw new Error(`PDF render of ${targetPath} was redirected to ${landed}`);
-		}
-
 		return Buffer.from(await page.pdf({ printBackground: true, ...pdfOptions }));
 	} finally {
 		await page.close();

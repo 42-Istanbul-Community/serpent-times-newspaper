@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { newspaperEdition } from '$lib/server/db/schema';
 import { auth } from '$lib/server/auth';
 import { getDevLogins } from '$lib/server/roles';
+import { countEditionPageImages } from '$lib/server/page-images';
 import type { Actions, PageServerLoad } from './$types';
 
 // homepage: public reading list of published newspaper editions, newest
@@ -25,15 +26,20 @@ export const load: PageServerLoad = async (event) => {
 	// the sharp cover never reaches the browser (the PDF itself is refused by
 	// /api/cdn). A null cdnUrl means no cover exists to blur either.
 	const signedIn = Boolean(event.locals.user);
-	const editions = rows.map((edition) => ({
-		id: edition.id,
-		title: edition.title,
-		coverUrl: edition.cdnUrl
-			? signedIn
-				? edition.cdnUrl
-				: `/api/newspaper-edition/${edition.id}/preview`
-			: null
-	}));
+	const editions = await Promise.all(
+		rows.map(async (edition) => ({
+			id: edition.id,
+			title: edition.title,
+			coverUrl: edition.cdnUrl
+				? signedIn
+					? edition.cdnUrl
+					: `/api/newspaper-edition/${edition.id}/preview`
+				: null,
+			// editions published before the page bake existed have no images and
+			// fall back to the plain PDF viewer until someone hits Refresh PDF.
+			pageCount: signedIn ? await countEditionPageImages(edition.id) : 0
+		}))
+	);
 
 	// failed auth flows are redirected here with ?error=<code> (see
 	// onAPIError.errorURL in $lib/server/auth.ts). Only then do we pay for the

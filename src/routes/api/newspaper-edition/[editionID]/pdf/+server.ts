@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { newspaperEdition } from '$lib/server/db/schema';
 import { requireSectionUserId } from '$lib/server/require-login';
 import { renderEditionPdf, saveEditionPdf } from '$lib/server/pdf';
+import { saveEditionPageImages } from '$lib/server/page-images';
 import type { RequestHandler } from './$types';
 
 // GET /api/newspaper-edition/<editionID>/pdf - prints the edition's own
@@ -33,8 +34,8 @@ export const GET: RequestHandler = async ({ params, request, url, locals }) => {
 };
 
 // POST /api/newspaper-edition/<editionID>/pdf - the topbar's "Refresh PDF"
-// button: re-bakes the PDF at the same fixed path a Publish already writes
-// to (cdn/newspaper/<id>/newspaper.pdf), overwriting it in place. Exists
+// button: re-bakes the PDF (and the reader's page images) at the same fixed
+// paths a Publish already writes to, overwriting them in place. Exists
 // because the publish-time bake only fires on the PATCH that flips status
 // to 'published' - further edits to an already-published edition don't
 // touch that file again on their own, so this is the manual "catch it back
@@ -51,10 +52,9 @@ export const POST: RequestHandler = async ({ params, request, url, locals }) => 
 		.where(and(eq(newspaperEdition.id, id), eq(newspaperEdition.userId, userId)));
 	if (!edition) error(404, 'Not found');
 
-	await saveEditionPdf(
-		id,
-		await renderEditionPdf(url.origin, id, request.headers.get('cookie') ?? '')
-	);
+	const cookie = request.headers.get('cookie') ?? '';
+	await saveEditionPdf(id, await renderEditionPdf(url.origin, id, cookie));
+	const pages = await saveEditionPageImages(url.origin, id, cookie);
 
-	return json({ ok: true });
+	return json({ ok: true, pages });
 };

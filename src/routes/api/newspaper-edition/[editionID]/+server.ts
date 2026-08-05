@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { newspaperEdition, publicationStatus } from '$lib/server/db/schema';
 import { requireSectionUserId } from '$lib/server/require-login';
 import { renderEditionPdf, saveEditionPdf } from '$lib/server/pdf';
+import { saveEditionPageImages } from '$lib/server/page-images';
 import type { RequestHandler } from './$types';
 
 // PATCH /api/newspaper-edition/<editionID> - the newspaper editor's autosave
@@ -55,6 +56,8 @@ export const PATCH: RequestHandler = async ({ params, request, locals, url }) =>
 		try {
 			const cookie = request.headers.get('cookie') ?? '';
 			await saveEditionPdf(id, await renderEditionPdf(url.origin, id, cookie));
+			// and the per-page images the homepage reader scrolls.
+			await saveEditionPageImages(url.origin, id, cookie);
 		} catch {
 			// best-effort, see above
 		}

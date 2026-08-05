@@ -3,6 +3,7 @@
 	import { LogIn, Newspaper } from '@lucide/svelte';
 	import { homepageNav } from './homepage-nav.svelte';
 	import AuthErrorToast from './auth-error-toast.svelte';
+	import Reader from './reader.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -12,8 +13,9 @@
 	let PDFViewer = $state<typeof import('@embedpdf/svelte-pdf-viewer').PDFViewer>();
 	let ZoomMode = $state<typeof import('@embedpdf/svelte-pdf-viewer').ZoomMode>();
 	onMount(async () => {
-		// signed out there is no PDF to open, so don't ship the viewer either.
-		if (!data.user) return;
+		// only the fallback path for editions with no baked pages still needs
+		// the viewer - signed out, or a scrolling edition, nothing is loaded.
+		if (!data.user || !data.editions.some((edition) => edition.pageCount === 0)) return;
 		const mod = await import('@embedpdf/svelte-pdf-viewer');
 		PDFViewer = mod.PDFViewer;
 		ZoomMode = mod.ZoomMode;
@@ -45,6 +47,14 @@
 	let pdfUrl = $derived(
 		data.user && selectedEdition ? `/api/cdn/newspaper/${selectedEdition.id}/newspaper.pdf` : null
 	);
+	let pageUrls = $derived(
+		selectedEdition
+			? Array.from(
+					{ length: selectedEdition.pageCount },
+					(_, i) => `/api/newspaper-edition/${selectedEdition.id}/pages/${i + 1}`
+				)
+			: []
+	);
 </script>
 
 <!-- failed sign-ins always land back here (see onAPIError.errorURL in
@@ -55,6 +65,10 @@
 	<div class="h-full shrink-0 md:col-span-10 md:h-full md:min-h-0">
 		{#if !data.user}
 			{@render lockedPreview()}
+		{:else if pageUrls.length > 0}
+			{#key selectedEdition?.id}
+				<Reader {pageUrls} />
+			{/key}
 		{:else if pdfUrl}
 			{@render viewer(pdfUrl)}
 		{:else}
