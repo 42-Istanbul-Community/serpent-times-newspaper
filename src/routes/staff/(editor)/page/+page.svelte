@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
-	import { Select, Tabs } from 'bits-ui';
+	import { Select } from 'bits-ui';
 	import {
 		BookOpen,
 		ChevronDown,
@@ -12,6 +12,7 @@
 		Quote,
 		Trash2
 	} from '@lucide/svelte';
+	import DraftBadge from '$lib/draft-badge.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -27,9 +28,6 @@
 	];
 
 	let newCategory = $state<TemplateCategory>('page');
-
-	let published = $derived(data.templates.filter((t) => t.availability !== 'draft'));
-	let drafts = $derived(data.templates.filter((t) => t.availability === 'draft'));
 </script>
 
 <div class="mx-auto max-w-5xl px-8 py-10">
@@ -71,29 +69,8 @@
 		</form>
 	</div>
 
-	<Tabs.Root value="published">
-		<Tabs.List class="mb-8 flex items-center gap-1 border-b border-paper-rule">
-			<Tabs.Trigger
-				value="published"
-				class="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-paper-ink data-[state=active]:border-slytherin data-[state=active]:text-slytherin"
-			>
-				Published
-			</Tabs.Trigger>
-			<Tabs.Trigger
-				value="draft"
-				class="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-paper-ink data-[state=active]:border-slytherin data-[state=active]:text-slytherin"
-			>
-				Draft
-			</Tabs.Trigger>
-		</Tabs.List>
-
-		<Tabs.Content value="published">
-			{@render categoryGroups(published)}
-		</Tabs.Content>
-		<Tabs.Content value="draft">
-			{@render categoryGroups(drafts)}
-		</Tabs.Content>
-	</Tabs.Root>
+	<!-- one list per category, drafts included and labelled on their own card -->
+	{@render categoryGroups(data.templates)}
 </div>
 
 {#snippet categoryGroups(list: TemplateSummary[])}
@@ -127,6 +104,7 @@
 {#snippet templateCard(template: TemplateSummary)}
 	<div class="relative">
 		{#if template.availability === 'draft'}
+			<DraftBadge />
 			{@render deleteButton(template.id, template.title)}
 		{/if}
 		<a

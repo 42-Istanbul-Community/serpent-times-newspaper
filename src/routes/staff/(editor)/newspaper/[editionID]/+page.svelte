@@ -16,7 +16,8 @@
 			data.pickableCover,
 			data.pickableIndex,
 			data.pickableCitation,
-			data.availablePapers
+			data.availablePapers,
+			data.authors
 		);
 		// seed article-row-sync so the post-hydrate effect tick isn't
 		// mistaken for a real slotValues edit.

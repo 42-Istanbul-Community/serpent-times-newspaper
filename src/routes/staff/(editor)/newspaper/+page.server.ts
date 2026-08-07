@@ -76,12 +76,11 @@ export const actions: Actions = {
 
 		return { success: true };
 	},
-	// moves an edition one slot up or down the reading order. The neighbour
-	// it swaps with is the next one in the SAME tab (published and drafts are
-	// listed separately, so swapping past a row the user can't see would look
-	// like the button did nothing), and the whole list is then renumbered:
-	// rows that predate this column all sit at position 0, where swapping two
-	// zeroes would change nothing at all.
+	// moves an edition one slot up or down the reading order - the same
+	// single list the dashboard shows, drafts included. The whole list is
+	// renumbered rather than swapping two values: rows that predate this
+	// column all sit at position 0, where swapping two zeroes would change
+	// nothing at all.
 	move: async ({ request, locals }) => {
 		const userId = requireUserId(locals);
 		const form = await request.formData();
@@ -92,22 +91,18 @@ export const actions: Actions = {
 		if (direction !== 'up' && direction !== 'down') return fail(400, { message: 'Invalid move' });
 
 		const rows = await db
-			.select({ id: newspaperEdition.id, status: newspaperEdition.status })
+			.select({ id: newspaperEdition.id })
 			.from(newspaperEdition)
 			.where(eq(newspaperEdition.userId, userId))
 			.orderBy(asc(newspaperEdition.position), desc(newspaperEdition.updatedAt));
 
-		const target = rows.find((row) => row.id === id);
-		if (!target) return fail(404, { message: 'Not found' });
-
-		const sameTab = rows.filter((row) => row.status === target.status);
-		const at = sameTab.findIndex((row) => row.id === id);
-		const neighbour = sameTab[direction === 'up' ? at - 1 : at + 1];
-		if (!neighbour) return { success: true }; // already at the end of its tab
-
 		const order = rows.map((row) => row.id);
 		const from = order.indexOf(id);
-		const to = order.indexOf(neighbour.id);
+		if (from === -1) return fail(404, { message: 'Not found' });
+
+		const to = direction === 'up' ? from - 1 : from + 1;
+		if (to < 0 || to >= order.length) return { success: true }; // already at the end
+
 		[order[from], order[to]] = [order[to], order[from]];
 
 		await Promise.all(

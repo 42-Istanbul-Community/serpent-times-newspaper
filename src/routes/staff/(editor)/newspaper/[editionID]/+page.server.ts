@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { and, eq, inArray, ne } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, newspaperEdition, pageTemplate } from '$lib/server/db/schema';
+import { loadAuthors } from '$lib/server/authors';
 import { requireUserId } from '$lib/server/require-login';
 import type { PageServerLoad } from './$types';
 
@@ -28,7 +29,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			pickableCover: [],
 			pickableIndex: [],
 			pickableCitation: [],
-			availablePapers: []
+			availablePapers: [],
+			authors: {}
 		};
 	}
 
@@ -79,9 +81,23 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.where(and(eq(newspaperEdition.userId, userId), ne(newspaperEdition.id, id)));
 	const usedPaperIds = new Set(allEditions.flatMap((e) => e.articleIds));
 	const papers = await db
-		.select({ id: article.id, title: article.title, cdnUrl: article.cdnUrl })
+		.select({
+			id: article.id,
+			title: article.title,
+			cdnUrl: article.cdnUrl,
+			userId: article.userId
+		})
 		.from(article)
 		.where(and(eq(article.userId, userId), eq(article.category, 'page')));
+
+	const availablePapers = papers.filter((p) => !usedPaperIds.has(p.id));
+
+	// whoever wrote/designed each pickable thing, so the pickers can credit
+	// them under the title (see $lib/author-badge.svelte).
+	const authors = await loadAuthors([
+		...availablePapers.map((p) => p.userId),
+		...[...pickableCover, ...pickableIndex, ...pickableCitation].map((t) => t.userId)
+	]);
 
 	return {
 		edition,
@@ -91,6 +107,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		pickableCover,
 		pickableIndex,
 		pickableCitation,
-		availablePapers: papers.filter((p) => !usedPaperIds.has(p.id))
+		availablePapers,
+		authors
 	};
 };

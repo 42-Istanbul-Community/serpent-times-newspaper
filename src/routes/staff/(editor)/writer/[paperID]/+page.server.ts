@@ -3,6 +3,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, pageTemplate } from '$lib/server/db/schema';
 import type { ArticlePage } from '$lib/server/db/schema/editor/article';
+import { loadAuthors } from '$lib/server/authors';
 import { requireUserId } from '$lib/server/require-login';
 import type { PageServerLoad } from './$types';
 
@@ -37,5 +38,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			and(eq(pageTemplate.category, 'page'), inArray(pageTemplate.availability, ['used', 'unused']))
 		);
 
-	return { article: articleRow, templates, pickableTemplates };
+	// the designer behind each pickable template, credited under its title in
+	// the picker (see $lib/author-badge.svelte) - templates come from every
+	// designer, so this is what tells two similar-looking ones apart.
+	const authors = await loadAuthors(pickableTemplates.map((t) => t.userId));
+
+	return { article: articleRow, templates, pickableTemplates, authors };
 };

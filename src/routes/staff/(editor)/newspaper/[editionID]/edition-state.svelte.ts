@@ -6,6 +6,7 @@
 // one row to track; here cover/index/papers/citation are separate rows).
 
 import { SvelteMap } from 'svelte/reactivity';
+import type { AuthorMap } from '$lib/authors';
 import * as assemble from '$lib/edition/assemble';
 import type { ArticleRow, AssembledPage, TemplateRow, TocEntry } from '$lib/edition/assemble';
 
@@ -13,6 +14,13 @@ import type { ArticleRow, AssembledPage, TemplateRow, TocEntry } from '$lib/edit
 // reader and the PDF bake assemble editions from the same functions, this
 // store just feeds them its live $state.
 export type { AssembledPage, ArticleRow, Role, TemplateRow } from '$lib/edition/assemble';
+
+export type PickablePaper = {
+	id: number;
+	title: string;
+	cdnUrl: string | null;
+	userId: string;
+};
 
 const DRAG_THRESHOLD_PX = 4;
 
@@ -136,7 +144,9 @@ class EditionState {
 	pickableCover = $state<TemplateRow[]>([]);
 	pickableIndex = $state<TemplateRow[]>([]);
 	pickableCitation = $state<TemplateRow[]>([]);
-	availablePapers = $state<{ id: number; title: string; cdnUrl: string | null }[]>([]);
+	availablePapers = $state<PickablePaper[]>([]);
+	// display-only lookup for the pickers' author line, keyed by userId.
+	authors = $state<AuthorMap>({});
 
 	// every page's live rendered DOM node, keyed by page id (uuid, globally
 	// unique across every tracked article) - lets the autosave-triggered

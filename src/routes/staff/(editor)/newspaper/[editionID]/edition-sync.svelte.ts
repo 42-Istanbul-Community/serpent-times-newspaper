@@ -7,7 +7,14 @@
 // slotValues edits (cover/index) are a *separate* concern, handled by
 // article-row-sync.ts against a different row entirely.
 
-import { editionState, type ArticleRow, type Role, type TemplateRow } from './edition-state.svelte';
+import {
+	editionState,
+	type ArticleRow,
+	type PickablePaper,
+	type Role,
+	type TemplateRow
+} from './edition-state.svelte';
+import type { AuthorMap } from '$lib/authors';
 import { captureAndUploadThumbnail } from './capture-thumbnail';
 import type { newspaperEdition as editionTable } from '$lib/server/db/schema';
 import type { ArticlePage } from '$lib/server/db/schema/editor/article';
@@ -50,7 +57,8 @@ class EditionSync {
 		pickableCover: TemplateRow[],
 		pickableIndex: TemplateRow[],
 		pickableCitation: TemplateRow[],
-		availablePapers: { id: number; title: string; cdnUrl: string | null }[]
+		availablePapers: PickablePaper[],
+		authors: AuthorMap
 	) {
 		// see paper-sync's hydrate: the pickable lists are design data, so they
 		// refresh on every load, not just the first one for this edition.
@@ -58,6 +66,7 @@ class EditionSync {
 		editionState.pickableIndex = pickableIndex;
 		editionState.pickableCitation = pickableCitation;
 		editionState.availablePapers = availablePapers;
+		editionState.authors = authors;
 
 		if (this.#hydratedId === row.id) return;
 		clearTimeout(this.#timer);
@@ -75,6 +84,7 @@ class EditionSync {
 		editionState.pickableIndex = pickableIndex;
 		editionState.pickableCitation = pickableCitation;
 		editionState.availablePapers = availablePapers;
+		editionState.authors = authors;
 
 		this.#hydratedId = row.id;
 		this.status = row.status;

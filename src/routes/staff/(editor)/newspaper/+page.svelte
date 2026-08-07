@@ -2,15 +2,12 @@
 	import { resolve } from '$app/paths';
 	import { applyAction, deserialize, enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import { Tabs } from 'bits-ui';
 	import { ChevronDown, ChevronUp, FileUp, Newspaper, Plus, Trash2, Upload } from '@lucide/svelte';
+	import DraftBadge from '$lib/draft-badge.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	type EditionSummary = (typeof data.editions)[number];
-
-	let published = $derived(data.editions.filter((e) => e.status === 'published'));
-	let drafts = $derived(data.editions.filter((e) => e.status === 'draft'));
 
 	let uploadOpen = $state(false);
 	// null while idle; 0..1 as the bytes go up, then null again once the
@@ -74,15 +71,9 @@
 		{@render uploadForm()}
 	{/if}
 
-	<Tabs.Root value="published">
-		<Tabs.List class="mb-8 flex items-center gap-1 border-b border-paper-rule">
-			{@render tabTrigger('published', 'Published')}
-			{@render tabTrigger('draft', 'Draft')}
-		</Tabs.List>
-
-		<Tabs.Content value="published">{@render editionGrid(published)}</Tabs.Content>
-		<Tabs.Content value="draft">{@render editionGrid(drafts)}</Tabs.Content>
-	</Tabs.Root>
+	<!-- one list in reading order, drafts included and labelled on their own
+	     card - the up/down arrows move an edition through this same order. -->
+	{@render editionGrid(data.editions)}
 </div>
 
 {#snippet newEditionButton()}
@@ -197,15 +188,6 @@
 	</div>
 {/snippet}
 
-{#snippet tabTrigger(value: string, label: string)}
-	<Tabs.Trigger
-		{value}
-		class="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-paper-ink data-[state=active]:border-slytherin data-[state=active]:text-slytherin"
-	>
-		{label}
-	</Tabs.Trigger>
-{/snippet}
-
 {#snippet editionGrid(list: EditionSummary[])}
 	{#if list.length === 0}
 		<p class="text-sm text-ui-text-muted">No editions here yet.</p>
@@ -221,6 +203,7 @@
 {#snippet editionCard(e: EditionSummary, isFirst: boolean, isLast: boolean)}
 	<div class="relative">
 		{#if e.status === 'draft'}
+			<DraftBadge />
 			{@render deleteButton(e.id, e.title)}
 		{/if}
 		<!-- uploaded editions open the same editor, just read-only: rename,

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Dialog } from 'bits-ui';
 	import { FileText, X } from '@lucide/svelte';
-	import type { TemplateRow } from './edition-state.svelte';
+	import { editionState, type TemplateRow } from './edition-state.svelte';
+	import AuthorBadge from '$lib/author-badge.svelte';
 
 	let {
 		open = $bindable(false),
@@ -54,6 +55,7 @@
 								{/if}
 							</div>
 							<span class="truncate text-xs font-medium text-ui-text-main">{template.title}</span>
+							<AuthorBadge author={editionState.authors[template.userId]} />
 						</button>
 					{/each}
 				</div>
