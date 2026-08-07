@@ -42,7 +42,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals, url }) =>
 		.update(newspaperEdition)
 		.set(patch) // updatedAt handled by $onUpdate - never set it manually
 		.where(and(eq(newspaperEdition.id, id), eq(newspaperEdition.userId, userId)))
-		.returning({ id: newspaperEdition.id });
+		.returning({ id: newspaperEdition.id, kind: newspaperEdition.kind });
 
 	if (!row) error(404, 'Not found'); // covers "doesn't exist" and "not yours" identically
 
@@ -52,7 +52,9 @@ export const PATCH: RequestHandler = async ({ params, request, locals, url }) =>
 	// so this is purely the offline/print artifact. Best-effort: a failure
 	// here shouldn't undo the publish, and the topbar's Download PDF button
 	// is still a manual fallback.
-	if (patch.status === 'published') {
+	// ...except for an uploaded back-issue, where that file IS the upload and
+	// there are no pages to print in the first place.
+	if (patch.status === 'published' && row.kind !== 'pdf') {
 		try {
 			const cookie = request.headers.get('cookie') ?? '';
 			await saveEditionPdf(id, await renderEditionPdf(url.origin, id, cookie));

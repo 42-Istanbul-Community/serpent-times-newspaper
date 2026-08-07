@@ -65,6 +65,7 @@
 		"mode-watcher": "^1.1.0",
 		"moveable": "^0.53.0",
 		"page-flip": "^2.0.7",
+		"pdf-to-img": "^6.2.0",
 		"puppeteer": "^25.4.0",
 		"svelte-easy-crop": "^5.0.1"
 	}

@@ -183,16 +183,18 @@ class EditionSync {
 		}
 	}
 
-	// the topbar's "Publish" button - the only way an edition leaves 'draft'.
-	async publish(id: number) {
+	// the topbar's Publish/Unpublish buttons - the only way an edition changes
+	// status. Unpublishing pulls it straight back off the homepage (which
+	// only ever lists published rows) without touching anything it holds.
+	async setStatus(id: number, status: EditionRow['status']) {
 		this.saving = true;
 		try {
 			const res = await fetch(`/api/newspaper-edition/${id}`, {
 				method: 'PATCH',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ status: 'published' })
+				body: JSON.stringify({ status })
 			});
-			if (res.ok) this.status = 'published';
+			if (res.ok) this.status = status;
 		} finally {
 			this.saving = false;
 		}

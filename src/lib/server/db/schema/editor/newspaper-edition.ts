@@ -1,11 +1,21 @@
 import { integer, jsonb, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { article } from './article';
-import { publicationStatus } from './enums';
+import { editionKind, publicationStatus } from './enums';
 
 export const newspaperEdition = pgTable('newspaper_edition', {
 	id: serial('id').primaryKey(),
 	userId: text('user_id').notNull(),
 	title: text('title').notNull(),
+	// 'pdf' editions are uploaded back-issues: every article/template column
+	// below stays empty for them, their newspaper.pdf is the upload itself
+	// rather than a bake, and the editor refuses to open them.
+	kind: editionKind('kind').notNull().default('assembled'),
+	// reading order, lowest first - what the homepage's list and the editor's
+	// dashboard are sorted by. Every row starts at 0 and ties break on
+	// updatedAt (newest first), so an untouched install keeps the
+	// newest-first order it had before anyone reordered anything; the first
+	// reorder renumbers the whole list (see the dashboard's `move` action).
+	position: integer('position').notNull().default(0),
 	// cover, index and citation pages are also filled-in instances of a
 	// pageTemplate (with a different category), so they reference article.id.
 	// cover is a single page, filled in by the editor while assembling the

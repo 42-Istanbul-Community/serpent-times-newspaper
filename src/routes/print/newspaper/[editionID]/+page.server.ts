@@ -22,6 +22,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const [edition] = await db.select().from(newspaperEdition).where(eq(newspaperEdition.id, id));
 	if (!edition) error(404, 'Not found');
+	// an uploaded back-issue is already a PDF - the download endpoint hands
+	// the stored file back instead of printing anything.
+	if (edition.kind === 'pdf') error(404, 'Not found');
 
 	return { title: edition.title, content: await loadEditionContent(edition) };
 };

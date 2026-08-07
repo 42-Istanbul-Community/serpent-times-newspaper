@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { CheckCircle2, FileDown, Loader2, RefreshCw } from '@lucide/svelte';
+	import { CheckCircle2, EyeOff, FileDown, Loader2, RefreshCw } from '@lucide/svelte';
 	import { editionSync } from './edition-sync.svelte';
+
+	// an uploaded edition's PDF is the upload itself - there is nothing to
+	// re-bake, and the endpoint refuses it (409) rather than overwrite.
+	let { uploaded = false }: { uploaded?: boolean } = $props();
 
 	let editionID = $derived(Number(page.params.editionID));
 	let isPublished = $derived(editionSync.status !== 'draft');
@@ -33,7 +37,9 @@
 	<div class="flex items-center gap-3">
 		{@render savingIndicator()}
 		{@render downloadLink()}
-		{@render refreshButton()}
+		{#if !uploaded}
+			{@render refreshButton()}
+		{/if}
 		{@render publishButton()}
 	</div>
 </header>
@@ -73,13 +79,28 @@
 {/snippet}
 
 {#snippet publishButton()}
-	<button
-		type="button"
-		disabled={isPublished || editionSync.saving}
-		onclick={() => editionSync.publish(editionID)}
-		class="flex items-center gap-1.5 rounded-md bg-slytherin px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-	>
-		<CheckCircle2 class="h-4 w-4" />
-		{isPublished ? 'Published' : 'Publish'}
-	</button>
+	{#if isPublished}
+		<!-- published editions are what the homepage lists, so taking one back
+		     to draft is the only way to pull it off the site again (and what
+		     the dashboard's drafts-only delete needs first). -->
+		<button
+			type="button"
+			disabled={editionSync.saving}
+			onclick={() => editionSync.setStatus(editionID, 'draft')}
+			class="flex items-center gap-1.5 rounded-md border border-ui-border px-3 py-1.5 text-sm font-medium text-ui-text-main hover:bg-ui-bg disabled:cursor-not-allowed disabled:opacity-50"
+		>
+			<EyeOff class="h-4 w-4" />
+			Unpublish
+		</button>
+	{:else}
+		<button
+			type="button"
+			disabled={editionSync.saving}
+			onclick={() => editionSync.setStatus(editionID, 'published')}
+			class="flex items-center gap-1.5 rounded-md bg-slytherin px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+		>
+			<CheckCircle2 class="h-4 w-4" />
+			Publish
+		</button>
+	{/if}
 {/snippet}

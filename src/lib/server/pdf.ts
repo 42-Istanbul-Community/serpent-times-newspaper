@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { type PDFOptions } from 'puppeteer';
 import { CDN_ROOT } from '$lib/server/cdn-root';
@@ -20,6 +20,15 @@ export async function renderPdf(
 	} finally {
 		await page.close();
 	}
+}
+
+// the same fixed path in reverse - an edition whose PDF was uploaded rather
+// than baked (kind='pdf') is read straight back from it. Null when nothing
+// was ever written there.
+export function readStoredEditionPdf(editionId: number): Promise<Buffer | null> {
+	return readFile(path.join(CDN_ROOT, 'newspaper', String(editionId), 'newspaper.pdf')).catch(
+		() => null
+	);
 }
 
 // writes the edition's PDF to cdn/newspaper/<editionId>/newspaper.pdf,

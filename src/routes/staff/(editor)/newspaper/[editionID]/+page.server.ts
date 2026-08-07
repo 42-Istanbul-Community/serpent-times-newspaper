@@ -16,6 +16,22 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.where(and(eq(newspaperEdition.id, id), eq(newspaperEdition.userId, userId)));
 	if (!edition) error(404, 'Not found');
 
+	// an uploaded back-issue has no articles or templates to look up - the
+	// editor opens it read-only (see +layout.svelte), showing the PDF itself
+	// where the assembled page stack would go.
+	if (edition.kind === 'pdf') {
+		return {
+			edition,
+			pdfUrl: `/api/cdn/newspaper/${edition.id}/newspaper.pdf`,
+			articles: [],
+			templates: [],
+			pickableCover: [],
+			pickableIndex: [],
+			pickableCitation: [],
+			availablePapers: []
+		};
+	}
+
 	const referencedArticleIds = [
 		...(edition.coverArticleId !== null ? [edition.coverArticleId] : []),
 		...edition.indexArticleIds,
@@ -69,6 +85,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	return {
 		edition,
+		pdfUrl: null,
 		articles,
 		templates,
 		pickableCover,

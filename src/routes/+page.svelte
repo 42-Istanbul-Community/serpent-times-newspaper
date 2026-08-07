@@ -29,6 +29,8 @@
 	<div class="h-full shrink-0 md:col-span-10 md:h-full md:min-h-0">
 		{#if !data.user}
 			{@render lockedPreview()}
+		{:else if data.pdfUrl}
+			{@render uploadedPdf(data.pdfUrl)}
 		{:else if data.content && data.content.pages.length > 0}
 			{#key data.selectedId}
 				<Reader content={data.content} userNames={data.userNames} />
@@ -85,6 +87,17 @@
 			</div>
 		</div>
 	</div>
+{/snippet}
+
+{#snippet uploadedPdf(src: string)}
+	<!-- a back-issue that was uploaded whole (kind='pdf'): there are no
+	     assembled pages to render, so the browser's own PDF viewer reads it.
+	     The URL is refused to logged-out requests by /api/cdn. -->
+	<iframe
+		{src}
+		title="{selectedEdition?.title ?? 'Newspaper'} (PDF)"
+		class="h-full min-h-[70vh] w-full rounded-md border border-paper-rule bg-paper-surface"
+	></iframe>
 {/snippet}
 
 {#snippet emptyState()}
