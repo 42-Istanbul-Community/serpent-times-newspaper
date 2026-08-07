@@ -16,7 +16,8 @@
 			data.pickableCover,
 			data.pickableIndex,
 			data.pickableCitation,
-			data.availablePapers
+			data.availablePapers,
+			data.authors
 		);
 		// seed article-row-sync so the post-hydrate effect tick isn't
 		// mistaken for a real slotValues edit.
@@ -67,11 +68,20 @@
 	});
 </script>
 
-{#if editionState.assembledPages.length > 0 && editionState.editionId !== null}
+{#if data.pdfUrl}
+	{@render uploadedPdf(data.pdfUrl)}
+{:else if editionState.assembledPages.length > 0 && editionState.editionId !== null}
 	{@render pageStack()}
 {:else}
 	{@render emptyState()}
 {/if}
+
+{#snippet uploadedPdf(src: string)}
+	<!-- read-only by construction: an uploaded edition's pages are a finished
+	     PDF, so the editor shows the file rather than an assembly it can't
+	     offer. Renaming and publishing live in the panel/topbar. -->
+	<iframe {src} title="{data.edition.title} (PDF)" class="h-full w-full bg-paper-bg"></iframe>
+{/snippet}
 
 {#snippet pageStack()}
 	<!-- every page stacked top-to-bottom, same "see the whole thing at a

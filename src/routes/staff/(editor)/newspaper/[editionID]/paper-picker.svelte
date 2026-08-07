@@ -3,6 +3,7 @@
 	import { FileStack, X } from '@lucide/svelte';
 	import { editionState } from './edition-state.svelte';
 	import { addPaper } from './edition-sync.svelte';
+	import AuthorBadge from '$lib/author-badge.svelte';
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 
@@ -51,6 +52,7 @@
 								{/if}
 							</div>
 							<span class="truncate text-xs font-medium text-ui-text-main">{paper.title}</span>
+							<AuthorBadge author={editionState.authors[paper.userId]} />
 						</button>
 					{/each}
 				</div>

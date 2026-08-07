@@ -6,6 +6,7 @@
 // effect (see +page.svelte), no special-cased "immediate" write path.
 
 import { paperState, type TemplateRow } from './paper-state.svelte';
+import type { AuthorMap } from '$lib/authors';
 import { captureAndUploadThumbnail } from './capture-thumbnail';
 import type { ArticlePage, article as articleTable } from '$lib/server/db/schema/editor/article';
 
@@ -28,7 +29,12 @@ class PaperSync {
 	// mirrors the DB row's status - read by the topbar's Publish button.
 	status = $state<ArticleRow['status']>('draft');
 
-	hydrate(row: ArticleRow, templates: TemplateRow[], pickableTemplates: TemplateRow[]) {
+	hydrate(
+		row: ArticleRow,
+		templates: TemplateRow[],
+		pickableTemplates: TemplateRow[],
+		authors: AuthorMap
+	) {
 		// design data, not the writer's own work - refresh it on every load,
 		// including re-runs for a paper that's already hydrated, so a template
 		// approved while this page was open shows up without a hard reload.
@@ -37,6 +43,7 @@ class PaperSync {
 		const known = new Set(paperState.templates.map((t) => t.id));
 		paperState.templates.push(...templates.filter((t) => !known.has(t.id)));
 		paperState.pickableTemplates = pickableTemplates;
+		paperState.authors = authors;
 
 		if (this.#hydratedId === row.id) return;
 		clearTimeout(this.#timer);

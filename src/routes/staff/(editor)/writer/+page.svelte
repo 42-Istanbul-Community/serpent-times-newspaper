@@ -1,15 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
-	import { Tabs } from 'bits-ui';
 	import { FileStack, Plus, Trash2 } from '@lucide/svelte';
+	import DraftBadge from '$lib/draft-badge.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 	type PaperSummary = (typeof data.papers)[number];
-
-	let published = $derived(data.papers.filter((p) => p.status === 'published'));
-	let drafts = $derived(data.papers.filter((p) => p.status === 'draft'));
 </script>
 
 <div class="mx-auto max-w-5xl px-8 py-10">
@@ -18,15 +15,8 @@
 		{@render newPaperButton()}
 	</div>
 
-	<Tabs.Root value="published">
-		<Tabs.List class="mb-8 flex items-center gap-1 border-b border-paper-rule">
-			{@render tabTrigger('published', 'Published')}
-			{@render tabTrigger('draft', 'Draft')}
-		</Tabs.List>
-
-		<Tabs.Content value="published">{@render paperGrid(published)}</Tabs.Content>
-		<Tabs.Content value="draft">{@render paperGrid(drafts)}</Tabs.Content>
-	</Tabs.Root>
+	<!-- one list, drafts included and labelled on their own card -->
+	{@render paperGrid(data.papers)}
 </div>
 
 {#snippet newPaperButton()}
@@ -39,15 +29,6 @@
 			New paper
 		</button>
 	</form>
-{/snippet}
-
-{#snippet tabTrigger(value: string, label: string)}
-	<Tabs.Trigger
-		{value}
-		class="border-b-2 border-transparent px-3 py-2 text-sm font-medium text-paper-ink data-[state=active]:border-slytherin data-[state=active]:text-slytherin"
-	>
-		{label}
-	</Tabs.Trigger>
 {/snippet}
 
 {#snippet paperGrid(list: PaperSummary[])}
@@ -65,6 +46,7 @@
 {#snippet paperCard(p: PaperSummary)}
 	<div class="relative">
 		{#if p.status === 'draft'}
+			<DraftBadge />
 			{@render deleteButton(p.id, p.title)}
 		{/if}
 		<a

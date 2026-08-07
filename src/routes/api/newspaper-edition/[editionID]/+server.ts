@@ -42,16 +42,19 @@ export const PATCH: RequestHandler = async ({ params, request, locals, url }) =>
 		.update(newspaperEdition)
 		.set(patch) // updatedAt handled by $onUpdate - never set it manually
 		.where(and(eq(newspaperEdition.id, id), eq(newspaperEdition.userId, userId)))
-		.returning({ id: newspaperEdition.id });
+		.returning({ id: newspaperEdition.id, kind: newspaperEdition.kind });
 
 	if (!row) error(404, 'Not found'); // covers "doesn't exist" and "not yours" identically
 
-	// publishing also bakes a readable PDF at a fixed, deterministic path
-	// (cdn/newspaper/<id>/newspaper.pdf) - the homepage's "read online" link
-	// points straight at it, no DB column needed. Best-effort: a failure
-	// here shouldn't undo the publish - the topbar's Download PDF button is
-	// still a manual fallback.
-	if (patch.status === 'published') {
+	// publishing also bakes a downloadable PDF at a fixed, deterministic path
+	// (cdn/newspaper/<id>/newspaper.pdf), no DB column needed. The reader
+	// itself doesn't wait on this - it renders the edition's rows as HTML -
+	// so this is purely the offline/print artifact. Best-effort: a failure
+	// here shouldn't undo the publish, and the topbar's Download PDF button
+	// is still a manual fallback.
+	// ...except for an uploaded back-issue, where that file IS the upload and
+	// there are no pages to print in the first place.
+	if (patch.status === 'published' && row.kind !== 'pdf') {
 		try {
 			const cookie = request.headers.get('cookie') ?? '';
 			await saveEditionPdf(id, await renderEditionPdf(url.origin, id, cookie));

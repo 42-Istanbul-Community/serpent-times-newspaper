@@ -10,7 +10,7 @@
 	// AND client-side paperID -> paperID navigation (this component is
 	// reused, not remounted, since paperState/paperSync are module singletons).
 	$effect(() => {
-		paperSync.hydrate(data.article, data.templates, data.pickableTemplates);
+		paperSync.hydrate(data.article, data.templates, data.pickableTemplates, data.authors);
 	});
 
 	// autosave: JSON.stringify forces a deep read so this re-fires on nested

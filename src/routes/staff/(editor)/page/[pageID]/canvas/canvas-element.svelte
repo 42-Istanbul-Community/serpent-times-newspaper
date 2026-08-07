@@ -19,7 +19,7 @@
 	} from '@lucide/svelte';
 	import { canvasStore, type CanvasElement } from '../canvas-state.svelte';
 	import { uploadImage } from '../upload-image';
-	import { boxAppearanceStyle, textBoxStyle, verticalAlignClass } from './element-style';
+	import { boxAppearanceStyle, textBoxStyle, verticalAlignClass } from '$lib/canvas/element-style';
 
 	let { el, targetEls }: { el: CanvasElement; targetEls: SvelteMap<string, HTMLDivElement> } =
 		$props();

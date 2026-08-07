@@ -30,7 +30,7 @@ function sanitizeFilename(name: string) {
 
 // GET /api/cdn/<group/path?> — a file streams its raw bytes (e.g. for
 // <img src>), a group lists its files/subgroups as JSON.
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
 	const target = resolveCdnPath(params.path ?? '');
 	const targetStat = await stat(target).catch(() => null);
 	if (!targetStat) {
@@ -38,13 +38,24 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 
 	if (targetStat.isFile()) {
-		const contentType =
-			CONTENT_TYPES[path.extname(target).toLowerCase()] ?? 'application/octet-stream';
+		const extension = path.extname(target).toLowerCase();
+		// the baked edition PDFs live here and are the whole newspaper - a
+		// logged-out reader only ever gets the blurred cover, so the direct URL
+		// must not hand them the real thing. Images stay public.
+		const isPdf = extension === '.pdf';
+		if (isPdf && !locals.user) {
+			error(401, 'Not authenticated');
+		}
+
+		const contentType = CONTENT_TYPES[extension] ?? 'application/octet-stream';
 		const bytes = await readFile(target);
 		return new Response(bytes, {
 			headers: {
 				'content-type': contentType,
-				'cache-control': 'public, max-age=31536000, immutable'
+				// PDFs are session-dependent, so never shared-cacheable.
+				'cache-control': isPdf
+					? 'private, max-age=0, must-revalidate'
+					: 'public, max-age=31536000, immutable'
 			}
 		});
 	}

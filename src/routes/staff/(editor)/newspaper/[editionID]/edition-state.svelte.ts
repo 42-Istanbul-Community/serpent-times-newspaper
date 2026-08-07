@@ -6,17 +6,20 @@
 // one row to track; here cover/index/papers/citation are separate rows).
 
 import { SvelteMap } from 'svelte/reactivity';
-import type { ArticlePage, article as articleTable } from '$lib/server/db/schema/editor/article';
-import type { pageTemplate as pageTemplateTable } from '$lib/server/db/schema';
+import type { AuthorMap } from '$lib/authors';
+import * as assemble from '$lib/edition/assemble';
+import type { ArticleRow, AssembledPage, TemplateRow, TocEntry } from '$lib/edition/assemble';
 
-export type TemplateRow = typeof pageTemplateTable.$inferSelect;
-export type ArticleRow = typeof articleTable.$inferSelect;
-export type Role = 'cover' | 'index' | 'body' | 'citation';
-export type AssembledPage = {
-	role: Role;
-	articleId: number;
-	page: ArticlePage;
-	pageNumber: number;
+// the render-order rules themselves live in $lib/edition/assemble - the
+// reader and the PDF bake assemble editions from the same functions, this
+// store just feeds them its live $state.
+export type { AssembledPage, ArticleRow, Role, TemplateRow } from '$lib/edition/assemble';
+
+export type PickablePaper = {
+	id: number;
+	title: string;
+	cdnUrl: string | null;
+	userId: string;
 };
 
 const DRAG_THRESHOLD_PX = 4;
@@ -141,7 +144,9 @@ class EditionState {
 	pickableCover = $state<TemplateRow[]>([]);
 	pickableIndex = $state<TemplateRow[]>([]);
 	pickableCitation = $state<TemplateRow[]>([]);
-	availablePapers = $state<{ id: number; title: string; cdnUrl: string | null }[]>([]);
+	availablePapers = $state<PickablePaper[]>([]);
+	// display-only lookup for the pickers' author line, keyed by userId.
+	authors = $state<AuthorMap>({});
 
 	// every page's live rendered DOM node, keyed by page id (uuid, globally
 	// unique across every tracked article) - lets the autosave-triggered
@@ -161,69 +166,28 @@ class EditionState {
 		(next) => (this.citationArticleIds = next)
 	);
 
-	// the whole edition, flattened into render order: cover -> index ->
-	// body papers -> citation, each contributing every page of its article
-	// (cover/index/citation articles always have exactly one). pageNumber
-	// is just the 1-based position in this list - the single source of
-	// truth `page-number` components substitute at render time.
 	get assembledPages(): AssembledPage[] {
-		const out: { role: Role; articleId: number; page: ArticlePage }[] = [];
-		const pushAll = (articleId: number, role: Role) => {
-			const row = this.articles[articleId];
-			if (row) for (const page of row.pages as ArticlePage[]) out.push({ role, articleId, page });
-		};
-		if (this.coverArticleId !== null) pushAll(this.coverArticleId, 'cover');
-		for (const id of this.indexArticleIds) pushAll(id, 'index');
-		for (const id of this.articleIds) pushAll(id, 'body');
-		for (const id of this.citationArticleIds) pushAll(id, 'citation');
-		return out.map((entry, i) => ({ ...entry, pageNumber: i + 1 }));
+		return assemble.assemblePages(
+			{
+				coverArticleId: this.coverArticleId,
+				indexArticleIds: this.indexArticleIds,
+				articleIds: this.articleIds,
+				citationArticleIds: this.citationArticleIds
+			},
+			this.articles
+		);
 	}
 
-	// one entry per body paper (not per page - a multi-page paper still gets
-	// just one line, at the page number its FIRST page landed on), in
-	// articleIds order. This is what an `index`-type component's content
-	// gets built from (see page-renderer.svelte's displayContent) - the
-	// designer places one such component on an index-category template and
-	// it "pours out" every paper's title + starting page number, rather
-	// than needing one designer-placed element per paper (which would break
-	// the moment the paper count changed).
-	get paperTocEntries(): { articleId: number; title: string; page: number }[] {
-		const entries: { articleId: number; title: string; page: number }[] = [];
-		for (const entry of this.assembledPages) {
-			if (entry.role !== 'body' || entries.some((e) => e.articleId === entry.articleId)) continue;
-			entries.push({
-				articleId: entry.articleId,
-				title: this.articles[entry.articleId]?.title ?? 'Untitled',
-				page: entry.pageNumber
-			});
-		}
-		return entries;
+	get paperTocEntries(): TocEntry[] {
+		return assemble.tocEntries(this.assembledPages, this.articles);
 	}
 
-	// unique userIds of whoever DESIGNED the templates actually used in this
-	// edition - what a `citation` component's citationType='designer' credit
-	// resolves to. Derived from `templates` (loaded once per referenced
-	// pageTemplate id, see +page.server.ts), not a static/global value, so
-	// it actually reflects who designed THIS edition's pages.
 	get designerUserIds(): string[] {
-		const ids: string[] = [];
-		for (const template of this.templates) {
-			if (!ids.includes(template.userId)) ids.push(template.userId);
-		}
-		return ids;
+		return assemble.designerUserIds(this.templates);
 	}
 
-	// unique userIds of whoever WROTE the body papers included in this
-	// edition - citationType='writers'. Derived from the actual `articleIds`
-	// list, not a static value, so adding/removing a paper changes who gets
-	// credited.
 	get writerUserIds(): string[] {
-		const ids: string[] = [];
-		for (const id of this.articleIds) {
-			const userId = this.articles[id]?.userId;
-			if (userId && !ids.includes(userId)) ids.push(userId);
-		}
-		return ids;
+		return assemble.writerUserIds(this.articleIds, this.articles);
 	}
 
 	updateSlot(articleId: number, elementId: string, value: string) {

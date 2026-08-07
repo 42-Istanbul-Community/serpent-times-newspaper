@@ -5,6 +5,7 @@
 // module singleton using Svelte 5 $state as a lightweight store.
 
 import { SvelteMap } from 'svelte/reactivity';
+import type { AuthorMap } from '$lib/authors';
 import type { ArticlePage } from '$lib/server/db/schema/editor/article';
 import type { pageTemplate as pageTemplateTable } from '$lib/server/db/schema';
 
@@ -20,6 +21,8 @@ class PaperState {
 	// writer is allowed to pick from when adding a new page.
 	templates = $state<TemplateRow[]>([]);
 	pickableTemplates = $state<TemplateRow[]>([]);
+	// display-only lookup for the picker's designer line, keyed by userId.
+	authors = $state<AuthorMap>({});
 
 	activePageId = $state<string | null>(null);
 

@@ -7,7 +7,14 @@
 // slotValues edits (cover/index) are a *separate* concern, handled by
 // article-row-sync.ts against a different row entirely.
 
-import { editionState, type ArticleRow, type Role, type TemplateRow } from './edition-state.svelte';
+import {
+	editionState,
+	type ArticleRow,
+	type PickablePaper,
+	type Role,
+	type TemplateRow
+} from './edition-state.svelte';
+import type { AuthorMap } from '$lib/authors';
 import { captureAndUploadThumbnail } from './capture-thumbnail';
 import type { newspaperEdition as editionTable } from '$lib/server/db/schema';
 import type { ArticlePage } from '$lib/server/db/schema/editor/article';
@@ -50,7 +57,8 @@ class EditionSync {
 		pickableCover: TemplateRow[],
 		pickableIndex: TemplateRow[],
 		pickableCitation: TemplateRow[],
-		availablePapers: { id: number; title: string; cdnUrl: string | null }[]
+		availablePapers: PickablePaper[],
+		authors: AuthorMap
 	) {
 		// see paper-sync's hydrate: the pickable lists are design data, so they
 		// refresh on every load, not just the first one for this edition.
@@ -58,6 +66,7 @@ class EditionSync {
 		editionState.pickableIndex = pickableIndex;
 		editionState.pickableCitation = pickableCitation;
 		editionState.availablePapers = availablePapers;
+		editionState.authors = authors;
 
 		if (this.#hydratedId === row.id) return;
 		clearTimeout(this.#timer);
@@ -75,6 +84,7 @@ class EditionSync {
 		editionState.pickableIndex = pickableIndex;
 		editionState.pickableCitation = pickableCitation;
 		editionState.availablePapers = availablePapers;
+		editionState.authors = authors;
 
 		this.#hydratedId = row.id;
 		this.status = row.status;
@@ -183,16 +193,18 @@ class EditionSync {
 		}
 	}
 
-	// the topbar's "Publish" button - the only way an edition leaves 'draft'.
-	async publish(id: number) {
+	// the topbar's Publish/Unpublish buttons - the only way an edition changes
+	// status. Unpublishing pulls it straight back off the homepage (which
+	// only ever lists published rows) without touching anything it holds.
+	async setStatus(id: number, status: EditionRow['status']) {
 		this.saving = true;
 		try {
 			const res = await fetch(`/api/newspaper-edition/${id}`, {
 				method: 'PATCH',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ status: 'published' })
+				body: JSON.stringify({ status })
 			});
-			if (res.ok) this.status = 'published';
+			if (res.ok) this.status = status;
 		} finally {
 			this.saving = false;
 		}

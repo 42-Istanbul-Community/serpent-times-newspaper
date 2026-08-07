@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { boxAppearanceStyle } from '../../../page/[pageID]/canvas/element-style';
+	import { boxAppearanceStyle } from '$lib/canvas/element-style';
 	import type { CanvasElement, CanvasNode } from '$lib/types/canvas';
 	import { paperState } from '../paper-state.svelte';
 	import { createArticleImageUploader } from '../upload-image';

@@ -3,26 +3,38 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { newspaperEdition } from '$lib/server/db/schema';
 import { requireSectionUserId } from '$lib/server/require-login';
-import { renderEditionPdf, saveEditionPdf } from '$lib/server/pdf';
+import { readStoredEditionPdf, renderEditionPdf, saveEditionPdf } from '$lib/server/pdf';
 import type { RequestHandler } from './$types';
 
-// GET /api/newspaper-edition/<editionID>/pdf - prints the edition's own
-// editor route (/newspaper/<id>) to PDF via headless Chromium. That route's
-// print CSS (see +layout.svelte/page-renderer.svelte) hides the topbar/panel
-// and strips manual-slot input chrome, so this is exactly what an editor
-// sees, minus the editing UI - never a separately maintained layout.
+// GET /api/newspaper-edition/<editionID>/pdf - prints /print/newspaper/<id>
+// to PDF via headless Chromium: the same PageView components the homepage
+// reader renders, never a separately maintained layout.
+//
+// Downloading is a read, so this is gated by the newspaper section (editor,
+// admin, dev) and NOT by ownership - any editor can export any edition,
+// draft or published. Writing (POST below) stays with the owner.
 export const GET: RequestHandler = async ({ params, request, url, locals }) => {
 	const id = Number(params.editionID);
 	if (!Number.isInteger(id)) error(400, 'Invalid id');
 
-	const userId = await requireSectionUserId(locals, 'newspaper');
+	await requireSectionUserId(locals, 'newspaper');
 	const [edition] = await db
-		.select({ id: newspaperEdition.id, title: newspaperEdition.title })
+		.select({
+			id: newspaperEdition.id,
+			title: newspaperEdition.title,
+			kind: newspaperEdition.kind
+		})
 		.from(newspaperEdition)
-		.where(and(eq(newspaperEdition.id, id), eq(newspaperEdition.userId, userId)));
+		.where(eq(newspaperEdition.id, id));
 	if (!edition) error(404, 'Not found');
 
-	const pdf = await renderEditionPdf(url.origin, id, request.headers.get('cookie') ?? '');
+	// an uploaded back-issue has no pages to print - the stored file IS the
+	// export, so hand it back rather than rendering an empty stack over it.
+	const pdf =
+		edition.kind === 'pdf'
+			? await readStoredEditionPdf(id)
+			: await renderEditionPdf(url.origin, id, request.headers.get('cookie') ?? '');
+	if (!pdf) error(404, 'Not found');
 
 	return new Response(new Uint8Array(pdf), {
 		headers: {
@@ -34,7 +46,7 @@ export const GET: RequestHandler = async ({ params, request, url, locals }) => {
 
 // POST /api/newspaper-edition/<editionID>/pdf - the topbar's "Refresh PDF"
 // button: re-bakes the PDF at the same fixed path a Publish already writes
-// to (cdn/newspaper/<id>/newspaper.pdf), overwriting it in place. Exists
+// to, overwriting it in place. Exists
 // because the publish-time bake only fires on the PATCH that flips status
 // to 'published' - further edits to an already-published edition don't
 // touch that file again on their own, so this is the manual "catch it back
@@ -46,15 +58,18 @@ export const POST: RequestHandler = async ({ params, request, url, locals }) => 
 
 	const userId = await requireSectionUserId(locals, 'newspaper');
 	const [edition] = await db
-		.select({ id: newspaperEdition.id })
+		.select({ id: newspaperEdition.id, kind: newspaperEdition.kind })
 		.from(newspaperEdition)
 		.where(and(eq(newspaperEdition.id, id), eq(newspaperEdition.userId, userId)));
 	if (!edition) error(404, 'Not found');
+	// re-baking an uploaded back-issue would write an empty render straight
+	// over the file that was uploaded. Nothing reaches this for a pdf edition
+	// today (they never open the editor), so refuse rather than destroy.
+	if (edition.kind === 'pdf')
+		error(409, 'This edition is an uploaded PDF - there is nothing to bake');
 
-	await saveEditionPdf(
-		id,
-		await renderEditionPdf(url.origin, id, request.headers.get('cookie') ?? '')
-	);
+	const cookie = request.headers.get('cookie') ?? '';
+	await saveEditionPdf(id, await renderEditionPdf(url.origin, id, cookie));
 
 	return json({ ok: true });
 };
