@@ -1,0 +1,25 @@
+{
+	"type": "index",
+	"label": "Index List",
+	"defaultWidth": 400,
+	"defaultHeight": 500,
+	"properties": {
+		"entryFormat": "{title} .... {page}",
+		"content": "Section Title .... 1\nAnother Section .... 5",
+		"fontSize": "12px"
+	},
+	"fields": [
+		{
+			"key": "entryFormat",
+			"label": "Entry format",
+			"type": "text",
+			"group": "Content"
+		},
+		{
+			"key": "content",
+			"label": "Preview",
+			"type": "text",
+			"group": "Content"
+		}
+	]
+}

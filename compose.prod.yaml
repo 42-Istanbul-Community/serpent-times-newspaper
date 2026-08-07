@@ -1,0 +1,66 @@
+# Production stack for the server: pulls the image built by CI, runs pending
+# migrations, then starts the app. Nothing is built here.
+#
+# Set COMPOSE_FILE=compose.prod.yaml in the server's .env so plain
+# `docker compose pull && docker compose up -d --wait` picks this up.
+
+name: serpenttimes
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # runs to completion on every `up`, before the app starts
+  migrate:
+    image: ${IMAGE:-ghcr.io/42-istanbul-community/serpent-times-newspaper}:${TAG:-latest}
+    restart: 'no'
+    command: ['bun', './build/migrate.js']
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    image: ${IMAGE:-ghcr.io/42-istanbul-community/serpent-times-newspaper}:${TAG:-latest}
+    restart: unless-stopped
+    # chromium forks per render and would otherwise leave zombies behind bun
+    # as pid 1
+    init: true
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    env_file:
+      - .env
+    # these four win over anything .env carries over from a dev machine
+    environment:
+      # the compose network, not localhost - the DATABASE_URL in .env is for
+      # host-side tooling and points at the wrong place from in here
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      # an empty CDN_ROOT would send uploads to the container filesystem
+      # instead of the volume, where a redeploy would take them with it
+      CDN_ROOT: /data/cdn
+      PUPPETEER_ARGS: --no-sandbox,--disable-dev-shm-usage
+      NODE_ENV: production
+    volumes:
+      - cdn:/data/cdn
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  cdn:

@@ -1,0 +1,22 @@
+{
+	"type": "image",
+	"label": "Image",
+	"defaultWidth": 220,
+	"defaultHeight": 160,
+	"properties": {
+		"manual": "true",
+		"src": "",
+		"objectFit": "cover"
+	},
+	"fields": [
+		{ "key": "manual", "label": "Manual", "type": "toggle", "group": "Manual" },
+		{ "key": "src", "label": "Image", "type": "image", "group": "Content" },
+		{
+			"key": "objectFit",
+			"label": "Fit",
+			"type": "select",
+			"options": ["cover", "contain", "fill"],
+			"group": "Content"
+		}
+	]
+}

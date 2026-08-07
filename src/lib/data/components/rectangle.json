@@ -1,0 +1,10 @@
+{
+	"type": "rectangle",
+	"label": "Rectangle",
+	"defaultWidth": 160,
+	"defaultHeight": 100,
+	"properties": {
+		"backgroundColor": "#2f6f52"
+	},
+	"fields": []
+}

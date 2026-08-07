@@ -1,0 +1,97 @@
+name: release
+
+# A push to `prod` builds the image and publishes it to the organisation's
+# GitHub Container Registry. The server pulls it with compose - see the README.
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      # blocking: currently clean
+      - run: bun run check
+
+      # not blocking yet - eslint has 4 pre-existing errors (two missing
+      # {#each} keys, a replaceState without resolve(), a dead assignment).
+      # Drop this line once they are cleared.
+      - run: bun run lint
+        continue-on-error: true
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      # the org name is mixed-case; ghcr only accepts lowercase paths
+      - id: image
+        run: echo "name=$REGISTRY/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+        env:
+          REPOSITORY: ${{ github.repository }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # lets the server verify an image really came out of this workflow
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - run: |
+          echo "### Published" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo 'Deploy on the server with `docker compose pull && docker compose up -d --wait`.' >> $GITHUB_STEP_SUMMARY

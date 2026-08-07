@@ -1,0 +1,106 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@import '@fontsource/roboto-slab/400.css';
+@import '@fontsource/roboto-slab/500.css';
+@import '@fontsource/roboto-slab/700.css';
+@import '@fontsource/roboto-slab/900.css';
+
+:root {
+	/* the actual page/paper surface inside the editor canvas always stays
+	   this color, regardless of app theme (real paper doesn't go dark mode).
+	   not overridden in :root.dark on purpose. can be made configurable
+	   per-template later. */
+	--color-canvas-paper: #fbf8f1;
+
+	/* --- Editorial Print (Gazete Tuvali) --- */
+	--color-paper-bg: #fbf8f1;
+	--color-paper-surface: #f2ede0;
+	--color-paper-ink: #2b2a27;
+	--color-paper-body-dark: #3c3a35;
+	--color-paper-body-mid: #4d4a44;
+	--color-paper-quote: #615d55;
+	--color-paper-rule: #d8d2c4;
+	--color-paper-placeholder: #a8a08e;
+	--color-paper-grid: rgba(0, 0, 0, 0.06);
+
+	/* --- UI / Stone Palette (Arayüz) --- */
+	--color-ui-bg: #f5f5f4; /* stone-100 */
+	--color-ui-surface: #ffffff; /* white */
+	--color-ui-border-light: #e7e5e4; /* stone-200 */
+	--color-ui-border: #d6d3d1; /* stone-300 */
+	--color-ui-border-dark: #a8a29e; /* stone-400 */
+	--color-ui-text-muted: #78716c; /* stone-500 */
+	--color-ui-text-sub: #5f5a52;
+	--color-ui-text-main: #2b2621;
+
+	/* --- Accents & Status (Etkileşim) --- */
+	--color-accent-blue: #3b7dd8;
+	--color-danger: #c15a4e;
+	--color-success: #3f8f5f;
+	--color-brand: #ff3e00;
+
+	--color-slytherin: #2f6f52;
+}
+
+:root.dark {
+	--color-paper-bg: #141310;
+	--color-paper-surface: #1c1a15;
+	--color-paper-ink: #f2ede1;
+	--color-paper-body-dark: #d8d3c6;
+	--color-paper-body-mid: #c3bdae;
+	--color-paper-quote: #a39d8f;
+	--color-paper-rule: #302f2b;
+	--color-paper-placeholder: #837d6d;
+	--color-paper-grid: rgba(255, 255, 255, 0.06);
+
+	--color-ui-bg: #1c1917;
+	--color-ui-surface: #292524;
+	--color-ui-border-light: #292524;
+	--color-ui-border: #44403c;
+	--color-ui-border-dark: #57534e;
+	--color-ui-text-muted: #a8a29e;
+	--color-ui-text-sub: #d6d3d1;
+	--color-ui-text-main: #f5f5f4;
+
+	--color-accent-blue: #6fa8f0;
+	--color-danger: #e18579;
+	--color-success: #6cc296;
+	--color-brand: #ff3e00;
+
+	--color-slytherin: #4bab7c;
+}
+
+@theme {
+	--color-canvas-paper: var(--color-canvas-paper);
+
+	--color-paper-bg: var(--color-paper-bg);
+	--color-paper-surface: var(--color-paper-surface);
+	--color-paper-ink: var(--color-paper-ink);
+	--color-paper-body-dark: var(--color-paper-body-dark);
+	--color-paper-body-mid: var(--color-paper-body-mid);
+	--color-paper-quote: var(--color-paper-quote);
+	--color-paper-rule: var(--color-paper-rule);
+	--color-paper-placeholder: var(--color-paper-placeholder);
+	--color-paper-grid: var(--color-paper-grid);
+
+	--color-ui-bg: var(--color-ui-bg);
+	--color-ui-surface: var(--color-ui-surface);
+	--color-ui-border-light: var(--color-ui-border-light);
+	--color-ui-border: var(--color-ui-border);
+	--color-ui-border-dark: var(--color-ui-border-dark);
+	--color-ui-text-muted: var(--color-ui-text-muted);
+	--color-ui-text-sub: var(--color-ui-text-sub);
+	--color-ui-text-main: var(--color-ui-text-main);
+
+	--color-accent-blue: var(--color-accent-blue);
+	--color-danger: var(--color-danger);
+	--color-success: var(--color-success);
+	--color-brand: var(--color-brand);
+	--color-slytherin: var(--color-slytherin);
+
+	--font-sans: 'Roboto Slab', ui-serif, Georgia, serif;
+	--font-serif: 'Roboto Slab', ui-serif, Georgia, serif;
+}
