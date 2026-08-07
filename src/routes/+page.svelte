@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import { LogIn, Newspaper } from '@lucide/svelte';
 	import { homepageNav } from './homepage-nav.svelte';
 	import AuthErrorToast from './auth-error-toast.svelte';
@@ -9,52 +9,16 @@
 	let { data }: { data: PageData } = $props();
 	type EditionSummary = (typeof data.editions)[number];
 
-	// touches browser-only APIs (Canvas, WASM) - static import would crash SSR.
-	let PDFViewer = $state<typeof import('@embedpdf/svelte-pdf-viewer').PDFViewer>();
-	let ZoomMode = $state<typeof import('@embedpdf/svelte-pdf-viewer').ZoomMode>();
-	onMount(async () => {
-		// only the fallback path for editions with no baked pages still needs
-		// the viewer - signed out, or a scrolling edition, nothing is loaded.
-		if (!data.user || !data.editions.some((edition) => edition.pageCount === 0)) return;
-		const mod = await import('@embedpdf/svelte-pdf-viewer');
-		PDFViewer = mod.PDFViewer;
-		ZoomMode = mod.ZoomMode;
-	});
-
-	const disabledCategories = [
-		'annotation',
-		'form',
-		'redaction',
-		'document',
-		'panel',
-		'tools',
-		'history',
-		'insert',
-		'security'
-	];
-
+	// the mobile edition switcher lives up in the nav (see +layout.svelte),
+	// which only knows what's published from here.
 	$effect(() => {
 		homepageNav.editions = data.editions;
 		return () => {
 			homepageNav.editions = [];
-			homepageNav.selectedId = null;
 		};
 	});
 
-	let selectedEdition = $derived(
-		data.editions.find((e) => e.id === homepageNav.selectedId) ?? data.editions[0] ?? null
-	);
-	let pdfUrl = $derived(
-		data.user && selectedEdition ? `/api/cdn/newspaper/${selectedEdition.id}/newspaper.pdf` : null
-	);
-	let pageUrls = $derived(
-		selectedEdition
-			? Array.from(
-					{ length: selectedEdition.pageCount },
-					(_, i) => `/api/newspaper-edition/${selectedEdition.id}/pages/${i + 1}`
-				)
-			: []
-	);
+	let selectedEdition = $derived(data.editions.find((e) => e.id === data.selectedId) ?? null);
 </script>
 
 <!-- failed sign-ins always land back here (see onAPIError.errorURL in
@@ -65,12 +29,10 @@
 	<div class="h-full shrink-0 md:col-span-10 md:h-full md:min-h-0">
 		{#if !data.user}
 			{@render lockedPreview()}
-		{:else if pageUrls.length > 0}
-			{#key selectedEdition?.id}
-				<Reader {pageUrls} />
+		{:else if data.content && data.content.pages.length > 0}
+			{#key data.selectedId}
+				<Reader content={data.content} userNames={data.userNames} />
 			{/key}
-		{:else if pdfUrl}
-			{@render viewer(pdfUrl)}
 		{:else}
 			{@render emptyState()}
 		{/if}
@@ -84,17 +46,6 @@
 		{/each}
 	</aside>
 </div>
-
-{#snippet viewer(src: string)}
-	{#if PDFViewer && ZoomMode}
-		{#key selectedEdition?.id}
-			<PDFViewer
-				config={{ src, disabledCategories, zoom: { defaultZoomLevel: ZoomMode.FitPage } }}
-				style="width: 100%; height: 100%;"
-			/>
-		{/key}
-	{/if}
-{/snippet}
 
 {#snippet lockedPreview()}
 	<!-- `coverUrl` arrives already blurred (see $lib/server/preview.ts) - no
@@ -145,10 +96,11 @@
 {/snippet}
 
 {#snippet editionCard(edition: EditionSummary)}
-	<button
-		type="button"
-		onclick={() => (homepageNav.selectedId = edition.id)}
-		class="flex flex-col gap-1.5 rounded-md border p-1.5 text-left transition-colors {selectedEdition?.id ===
+	<!-- a link, not a button: which edition you're reading is URL state now
+	     (?edition=<id>), so it survives a reload and can be shared. -->
+	<a
+		href="{resolve('/')}?edition={edition.id}"
+		class="flex flex-col gap-1.5 rounded-md border p-1.5 text-left transition-colors {data.selectedId ===
 		edition.id
 			? 'border-slytherin bg-slytherin/10'
 			: 'border-transparent hover:border-paper-rule'}"
@@ -165,5 +117,5 @@
 			{/if}
 		</div>
 		<span class="truncate text-xs font-medium text-paper-ink">{edition.title}</span>
-	</button>
+	</a>
 {/snippet}

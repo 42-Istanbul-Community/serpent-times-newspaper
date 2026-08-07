@@ -1,6 +1,9 @@
 <script lang="ts">
-	import DOMPurify from 'dompurify';
-	import { textBoxStyle, verticalAlignClass } from '../../../page/[pageID]/canvas/element-style';
+	// isomorphic build, not plain `dompurify`: this component renders on the
+	// server too now (the homepage reader and the print route), and dompurify
+	// without a DOM has no `sanitize` at all.
+	import DOMPurify from 'isomorphic-dompurify';
+	import { textBoxStyle, verticalAlignClass } from '$lib/canvas/element-style';
 	import type { CanvasElement } from '$lib/types/canvas';
 
 	let { el, content }: { el: CanvasElement; content: string } = $props();

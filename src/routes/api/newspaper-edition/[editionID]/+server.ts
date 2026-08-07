@@ -4,7 +4,6 @@ import { db } from '$lib/server/db';
 import { newspaperEdition, publicationStatus } from '$lib/server/db/schema';
 import { requireSectionUserId } from '$lib/server/require-login';
 import { renderEditionPdf, saveEditionPdf } from '$lib/server/pdf';
-import { saveEditionPageImages } from '$lib/server/page-images';
 import type { RequestHandler } from './$types';
 
 // PATCH /api/newspaper-edition/<editionID> - the newspaper editor's autosave
@@ -47,17 +46,16 @@ export const PATCH: RequestHandler = async ({ params, request, locals, url }) =>
 
 	if (!row) error(404, 'Not found'); // covers "doesn't exist" and "not yours" identically
 
-	// publishing also bakes a readable PDF at a fixed, deterministic path
-	// (cdn/newspaper/<id>/newspaper.pdf) - the homepage's "read online" link
-	// points straight at it, no DB column needed. Best-effort: a failure
-	// here shouldn't undo the publish - the topbar's Download PDF button is
-	// still a manual fallback.
+	// publishing also bakes a downloadable PDF at a fixed, deterministic path
+	// (cdn/newspaper/<id>/newspaper.pdf), no DB column needed. The reader
+	// itself doesn't wait on this - it renders the edition's rows as HTML -
+	// so this is purely the offline/print artifact. Best-effort: a failure
+	// here shouldn't undo the publish, and the topbar's Download PDF button
+	// is still a manual fallback.
 	if (patch.status === 'published') {
 		try {
 			const cookie = request.headers.get('cookie') ?? '';
 			await saveEditionPdf(id, await renderEditionPdf(url.origin, id, cookie));
-			// and the per-page images the homepage reader scrolls.
-			await saveEditionPageImages(url.origin, id, cookie);
 		} catch {
 			// best-effort, see above
 		}

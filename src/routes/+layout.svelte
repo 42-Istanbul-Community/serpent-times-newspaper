@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import favicon from '$lib/assets/favicon.svg';
 	import {
 		FileText,
 		Newspaper,
 		PenTool,
-		LogIn,
 		LogOut,
 		Sun,
 		Moon,
@@ -33,7 +33,9 @@
 
 	let navItems = $derived([
 		...baseNavItems.filter((item) => canAccessSection(data.role, item.section)),
-		...(data.role === 'dev' ? [{ path: '/staff/dev', label: 'User roles', icon: ShieldUser }] : [])
+		...(data.role === 'dev'
+			? [{ path: '/staff/dev', label: 'User roles', icon: ShieldUser } as const]
+			: [])
 	]);
 
 	const activeClass = 'text-slytherin underline decoration-2 underline-offset-4';
@@ -105,7 +107,7 @@
 
 {#snippet Logo()}
 	<a
-		href="/"
+		href={resolve('/')}
 		class="text-xl font-bold transition-colors duration-300 {currentPath === '/'
 			? 'text-slytherin'
 			: inactiveClass}"
@@ -180,16 +182,6 @@
 				</DropdownMenu.Content>
 			</DropdownMenu.Portal>
 		</DropdownMenu.Root>
-	{:else}
-		<form method="post" action="/?/signInIntra">
-			<button
-				type="submit"
-				class="flex items-center gap-1.5 text-paper-ink transition-colors duration-300"
-			>
-				<LogIn class="h-4 w-4" />
-				<span class="hidden md:inline">Login with Intra</span>
-			</button>
-		</form>
 	{/if}
 {/snippet}
 
@@ -198,7 +190,7 @@
 		{#if data.user}
 			{#each navItems as item (item.path)}
 				<a
-					href={item.path}
+					href={resolve(item.path)}
 					onclick={() => (mobileMenuOpen = false)}
 					class="flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors duration-300 {currentPath ===
 					item.path
@@ -229,15 +221,13 @@
 		<span class="px-2 text-sm text-paper-ink">Newspapers</span>
 		<div class="flex gap-3 overflow-x-auto px-2 py-1">
 			{#each homepageNav.editions as edition (edition.id)}
-				{@const selected = homepageNav.selectedId
-					? homepageNav.selectedId === edition.id
+				{@const requested = Number(page.url.searchParams.get('edition'))}
+				{@const selected = homepageNav.editions.some((e) => e.id === requested)
+					? requested === edition.id
 					: homepageNav.editions[0]?.id === edition.id}
-				<button
-					type="button"
-					onclick={() => {
-						homepageNav.selectedId = edition.id;
-						mobileMenuOpen = false;
-					}}
+				<a
+					href="{resolve('/')}?edition={edition.id}"
+					onclick={() => (mobileMenuOpen = false)}
 					class="flex w-28 shrink-0 flex-col gap-1 text-left"
 				>
 					<div
@@ -258,7 +248,7 @@
 					>
 						{edition.title}
 					</span>
-				</button>
+				</a>
 			{/each}
 		</div>
 	</div>

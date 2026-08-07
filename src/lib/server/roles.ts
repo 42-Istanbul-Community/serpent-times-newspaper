@@ -17,6 +17,11 @@ export type Role = 'dev' | (typeof STAFF_ROLES)[number] | 'user';
 /** DB-assignable roles: everything except 'dev', which only comes from INTRA_DEV_IDS. */
 export const ASSIGNABLE_ROLES = ['user', ...STAFF_ROLES] as const;
 
+/** On the INTRA_DEV_IDS list, whether or not a stored role currently masks it. */
+export function isDevAccount(intraAccountId?: string | null): boolean {
+	return Boolean(intraAccountId && devIds.has(intraAccountId));
+}
+
 // A stored role wins over the dev list, so devs can drop themselves to any
 // role to test that viewpoint (scripts/set-user-role.sh). Clearing the column
 // puts them back to 'dev'.
@@ -24,7 +29,7 @@ export function getRole(user: { role?: string | null }, intraAccountId?: string)
 	if (user.role && (ASSIGNABLE_ROLES as readonly string[]).includes(user.role)) {
 		return user.role as (typeof ASSIGNABLE_ROLES)[number];
 	}
-	if (intraAccountId && devIds.has(intraAccountId)) return 'dev';
+	if (isDevAccount(intraAccountId)) return 'dev';
 	return 'user';
 }
 

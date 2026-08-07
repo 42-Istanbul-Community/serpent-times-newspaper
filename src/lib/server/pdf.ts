@@ -32,8 +32,11 @@ export async function saveEditionPdf(editionId: number, pdf: Buffer): Promise<vo
 }
 
 // shared by both the on-demand Download PDF endpoint and the publish-time
-// bake below - matches PAPER_WIDTH/PAPER_HEIGHT in page-renderer.svelte
-// exactly, one PDF page per 720x960 page, no scaling mismatch.
+// bake below - matches PAPER_WIDTH/PAPER_HEIGHT in page-view.svelte exactly,
+// one PDF page per 720x960 page, no scaling mismatch. Prints the bare
+// /print/newspaper/<id> route rather than the editor: same PageView
+// component the reader renders, minus any chrome to strip, and reachable by
+// any editor/admin/dev rather than only the edition's own assembler.
 export function renderEditionPdf(
 	origin: string,
 	editionId: number,
@@ -43,7 +46,7 @@ export function renderEditionPdf(
 
 	return renderPdf(
 		origin,
-		`/staff/newspaper/${editionId}`,
+		`/print/newspaper/${editionId}`,
 		{
 			width: '720px',
 			height: '960px',

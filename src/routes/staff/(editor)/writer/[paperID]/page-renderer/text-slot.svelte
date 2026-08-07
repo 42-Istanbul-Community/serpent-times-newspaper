@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import DOMPurify from 'dompurify';
-	import { textBoxStyle, verticalAlignClass } from '../../../page/[pageID]/canvas/element-style';
+	import { textBoxStyle, verticalAlignClass } from '$lib/canvas/element-style';
 	import type { CanvasElement } from '$lib/types/canvas';
 
 	let {
