@@ -58,7 +58,7 @@
 
 	const sortedUsers = $derived(
 		[...data.users].sort((a, b) => {
-			let cmp = 0;
+			let cmp: number;
 			if (sortKey === 'name') cmp = a.name.localeCompare(b.name);
 			else if (sortKey === 'role') cmp = roleOrder[a.role] - roleOrder[b.role];
 			else cmp = a.createdAt.getTime() - b.createdAt.getTime();

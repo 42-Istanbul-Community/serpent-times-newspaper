@@ -42,13 +42,13 @@
 <div class="min-h-screen bg-paper-bg px-8 py-12 text-paper-ink">
 	<h1 class="mb-10 font-serif text-3xl font-bold">Color Schema</h1>
 
-	{#each groups as group}
+	{#each groups as group (group.title)}
 		<section class="mb-10">
 			<h2 class="mb-4 text-sm font-semibold tracking-wide text-paper-quote uppercase">
 				{group.title}
 			</h2>
 			<div class="flex flex-wrap gap-4">
-				{#each group.swatches as swatch}
+				{#each group.swatches as swatch (swatch.name)}
 					<div class="flex flex-col gap-2">
 						<div class="{swatch.class} h-20 w-32 rounded-md border border-ui-border"></div>
 						<span class="text-xs text-paper-body-mid">{swatch.name}</span>

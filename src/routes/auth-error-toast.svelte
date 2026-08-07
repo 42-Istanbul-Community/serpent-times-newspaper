@@ -25,6 +25,9 @@
 		const url = new URL(page.url);
 		url.searchParams.delete('error');
 		url.searchParams.delete('error_description');
+		// not a navigation - `url` is this page's own, minus the query, so it
+		// already carries any base path. resolve() takes a route id, not a URL.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		replaceState(url, page.state);
 	}
 
