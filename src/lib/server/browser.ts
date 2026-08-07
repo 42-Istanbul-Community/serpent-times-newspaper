@@ -1,11 +1,17 @@
 import puppeteer, { type Browser, type Page, type Viewport } from 'puppeteer';
+import { env } from '$env/dynamic/private';
 
 // One lazily-launched Chromium reused by every render in this process -
 // a fresh browser per request would cost ~1s of startup each time.
 let browserPromise: Promise<Browser> | null = null;
 
+// Chromium's own sandbox needs privileges a container does not get by default,
+// so the image passes --no-sandbox here rather than the flag being hardcoded
+// for everyone. Comma-separated.
+const launchArgs = env.PUPPETEER_ARGS?.split(',').filter(Boolean) ?? [];
+
 export function getBrowser(): Promise<Browser> {
-	if (!browserPromise) browserPromise = puppeteer.launch({ headless: true });
+	if (!browserPromise) browserPromise = puppeteer.launch({ headless: true, args: launchArgs });
 	return browserPromise;
 }
 

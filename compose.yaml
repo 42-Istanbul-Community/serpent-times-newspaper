@@ -1,3 +1,6 @@
+# Local development: just the database. The app itself runs on the host via
+# `bun run dev`. The production stack lives in compose.prod.yaml.
+
 services:
   db:
     image: postgres:18-alpine
@@ -12,5 +15,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
 volumes:
   pgdata:

@@ -1,0 +1,13 @@
+*
+
+!package.json
+!bun.lock
+!bunfig.toml
+!.npmrc
+!vite.config.ts
+!tsconfig.json
+!drizzle.config.ts
+!src
+!static
+!drizzle
+!scripts
