@@ -28,14 +28,9 @@ jobs:
         env:
           PUPPETEER_SKIP_DOWNLOAD: 'true'
 
-      # blocking: currently clean
       - run: bun run check
 
-      # not blocking yet - eslint has 4 pre-existing errors (two missing
-      # {#each} keys, a replaceState without resolve(), a dead assignment).
-      # Drop this line once they are cleared.
       - run: bun run lint
-        continue-on-error: true
 
   publish:
     needs: verify
