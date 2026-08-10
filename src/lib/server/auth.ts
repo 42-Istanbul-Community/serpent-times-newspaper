@@ -20,7 +20,7 @@ async function getIntraClientSecret() {
 
 export const auth = betterAuth({
 	baseURL: env.ORIGIN,
-	secret: env.BETTER_AUTH_SECRET,
+	secret: env.BETTER_AUTH_SECRET || 'build-time-placeholder-not-used-at-runtime',
 	database: drizzleAdapter(db, { provider: 'pg' }),
 	emailAndPassword: { enabled: true },
 	// without this, any auth failure lands on better-auth's own full-page
