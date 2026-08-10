@@ -43,6 +43,8 @@ jobs:
 
       - name: Build SvelteKit application
         run: bun run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Transfer build artifacts to ISPmanager server
         uses: appleboy/scp-action@v0.1.7
