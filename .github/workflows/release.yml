@@ -65,8 +65,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
-            # Include standard Node, npm, bun, and PM2 directories in PATH
-            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin:~/.bun/bin:/opt/node24/bin
+            # Include standard Node, npm, bun, npm-global and PM2 directories in PATH
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin:~/.bun/bin:/opt/node24/bin:~/.npm-global/bin:./node_modules/.bin
 
             cd ${{ secrets.TARGET_DIR }}
 
@@ -76,5 +76,5 @@ jobs:
             # 2. Run database migrations
             npx drizzle-kit migrate || bun run db:migrate || npx drizzle-kit push --force
 
-            # 3. Reload or start PM2 process
-            pm2 reload ${{ secrets.PM2_APP_NAME }} || pm2 restart ${{ secrets.PM2_APP_NAME }} || pm2 start build/index.js --name ${{ secrets.PM2_APP_NAME }}
+            # 3. Reload or start PM2 process via npx
+            npx pm2 reload ${{ secrets.PM2_APP_NAME }} || npx pm2 restart ${{ secrets.PM2_APP_NAME }} || npx pm2 start build/index.js --name ${{ secrets.PM2_APP_NAME }}
