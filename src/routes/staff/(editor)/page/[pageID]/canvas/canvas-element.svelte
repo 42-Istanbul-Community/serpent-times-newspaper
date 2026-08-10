@@ -36,12 +36,14 @@
 	let { el, targetEls }: { el: CanvasElement; targetEls: SvelteMap<string, HTMLDivElement> } =
 		$props();
 
-	let LexicalEditor = $state<Component<{
-		value: string;
-		onchange: (html: string) => void;
-		textStyle?: string;
-		placeholder?: string;
-	}>>();
+	let LexicalEditor = $state<
+		Component<{
+			value: string;
+			onchange: (html: string) => void;
+			textStyle?: string;
+			placeholder?: string;
+		}>
+	>();
 
 	onMount(async () => {
 		LexicalEditor = (await import('$lib/components/editor/lexical-editor.svelte')).default;
@@ -149,7 +151,7 @@
 						<img
 							src={el.properties.src || '/sample-image.jpg'}
 							alt=""
-							class="h-full w-full pointer-events-none select-none"
+							class="pointer-events-none h-full w-full select-none"
 							style="object-fit: {el.properties.objectFit ?? 'cover'};"
 						/>
 					</div>
@@ -160,14 +162,18 @@
 						<LexicalEditor
 							value={el.properties.content ?? ''}
 							onchange={(html) => (el.properties.content = html)}
-							textStyle="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(el.properties)}"
+							textStyle="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(
+								el.properties
+							)}"
 							placeholder="Enter text..."
 						/>
 					{:else}
 						<div class="flex h-full w-full px-1 {verticalAlignClass(el.properties)}">
 							<span
 								class="w-full whitespace-pre-line"
-								style="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(el.properties)}"
+								style="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(
+									el.properties
+								)}"
 							>
 								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 								{@html DOMPurify.sanitize(displayContent(el))}

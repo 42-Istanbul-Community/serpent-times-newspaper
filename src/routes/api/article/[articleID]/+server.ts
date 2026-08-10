@@ -15,10 +15,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		.select()
 		.from(article)
 		.where(
-			and(
-				eq(article.id, id),
-				or(eq(article.userId, userId), eq(article.status, 'published'))
-			)
+			and(eq(article.id, id), or(eq(article.userId, userId), eq(article.status, 'published')))
 		);
 
 	if (!row) error(404, 'Not found');

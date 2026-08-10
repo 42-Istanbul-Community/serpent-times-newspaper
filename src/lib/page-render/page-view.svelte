@@ -133,7 +133,7 @@
 							el.height,
 							el.properties.fontSize,
 							el.properties.lineHeight
-					  );
+						);
 			return substituteCitation(el.properties.content, names);
 		}
 		if (el.type === 'index') {
@@ -145,7 +145,7 @@
 							el.height,
 							el.properties.fontSize,
 							el.properties.lineHeight
-					  );
+						);
 			return buildIndexContent(el.properties.entryFormat || '{title} .... {page}', entries);
 		}
 		if (el.type === 'date') return formatDateToken(el.properties.content);

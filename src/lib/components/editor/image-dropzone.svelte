@@ -71,7 +71,7 @@
 		<img src={value} alt="" class="h-full w-full" style="object-fit: {objectFit};" />
 		<!-- Overlay controls -->
 		<div
-			class="absolute inset-0 flex flex-wrap items-center justify-center gap-1.5 bg-black/60 p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+			class="absolute inset-0 flex flex-wrap items-center justify-center gap-1.5 bg-black/60 p-2 opacity-0 transition-opacity group-hover:opacity-100"
 		>
 			<!-- Fit Mode Button Group -->
 			<div class="flex items-center rounded border border-white/20 bg-black/60 p-0.5 shadow">
@@ -81,7 +81,8 @@
 						e.stopPropagation();
 						objectFit = 'cover';
 					}}
-					class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors cursor-pointer {objectFit === 'cover'
+					class="cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors {objectFit ===
+					'cover'
 						? 'bg-slytherin text-white'
 						: 'text-white/70 hover:text-white'}"
 					title="Cover (Fill & Crop)"
@@ -94,7 +95,8 @@
 						e.stopPropagation();
 						objectFit = 'contain';
 					}}
-					class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors cursor-pointer {objectFit === 'contain'
+					class="cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors {objectFit ===
+					'contain'
 						? 'bg-slytherin text-white'
 						: 'text-white/70 hover:text-white'}"
 					title="Contain (Fit inside)"
@@ -107,7 +109,8 @@
 						e.stopPropagation();
 						objectFit = 'fill';
 					}}
-					class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors cursor-pointer {objectFit === 'fill'
+					class="cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors {objectFit ===
+					'fill'
 						? 'bg-slytherin text-white'
 						: 'text-white/70 hover:text-white'}"
 					title="Fill (Stretch to fit)"
@@ -123,7 +126,7 @@
 						e.stopPropagation();
 						isCropperOpen = true;
 					}}
-					class="flex items-center gap-1 rounded bg-slytherin px-2 py-1 text-[11px] font-medium text-white shadow hover:bg-slytherin-dark transition-colors cursor-pointer"
+					class="hover:bg-slytherin-dark flex cursor-pointer items-center gap-1 rounded bg-slytherin px-2 py-1 text-[11px] font-medium text-white shadow transition-colors"
 					title="Crop & Adjust Position"
 				>
 					<Crop class="h-3.5 w-3.5" />
@@ -135,7 +138,7 @@
 						e.stopPropagation();
 						fileInput.click();
 					}}
-					class="rounded bg-white/90 p-1 text-ui-text-main shadow hover:bg-white transition-colors cursor-pointer"
+					class="cursor-pointer rounded bg-white/90 p-1 text-ui-text-main shadow transition-colors hover:bg-white"
 					title="Change Image"
 				>
 					<Upload class="h-3.5 w-3.5" />
@@ -146,7 +149,7 @@
 						e.stopPropagation();
 						onchange('');
 					}}
-					class="rounded bg-red-500/90 p-1 text-white shadow hover:bg-red-600 transition-colors cursor-pointer"
+					class="cursor-pointer rounded bg-red-500/90 p-1 text-white shadow transition-colors hover:bg-red-600"
 					title="Remove Image"
 				>
 					<Trash2 class="h-3.5 w-3.5" />
@@ -157,7 +160,7 @@
 		<button
 			type="button"
 			onclick={() => !isUploading && fileInput.click()}
-			class="flex flex-col items-center justify-center gap-1 h-full w-full cursor-pointer"
+			class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1"
 		>
 			<ImagePlus class="h-4 w-4 text-ui-text-muted" />
 			<span class="text-center text-xs text-ui-text-muted">Click or drop an image</span>
@@ -174,10 +177,5 @@
 />
 
 {#if value}
-	<CropperModal
-		bind:open={isCropperOpen}
-		imageSrc={value}
-		{aspect}
-		onCropSave={handleCropSave}
-	/>
+	<CropperModal bind:open={isCropperOpen} imageSrc={value} {aspect} onCropSave={handleCropSave} />
 {/if}

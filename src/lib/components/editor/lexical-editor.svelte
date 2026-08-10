@@ -386,7 +386,7 @@
 				refocusEditor();
 			}}
 			aria-label="Font"
-			class="rounded border border-transparent bg-transparent text-xs hover:border-ui-border font-medium"
+			class="rounded border border-transparent bg-transparent text-xs font-medium hover:border-ui-border"
 		>
 			<option value="" selected disabled>Font</option>
 			<option value="+ Add Font" class="font-bold text-slytherin">+ Add Font</option>

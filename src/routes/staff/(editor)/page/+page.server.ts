@@ -50,7 +50,9 @@ export const actions: Actions = {
 		// Check if template is referenced by any article pages
 		const allArticles = await db.select({ pages: article.pages }).from(article);
 		const isReferenced = allArticles.some((a) =>
-			(a.pages as Array<{ pageTemplateId: number }> | undefined)?.some((p) => p.pageTemplateId === id)
+			(a.pages as Array<{ pageTemplateId: number }> | undefined)?.some(
+				(p) => p.pageTemplateId === id
+			)
 		);
 		if (isReferenced) {
 			return fail(400, { message: 'Template is in use by an article and cannot be deleted.' });

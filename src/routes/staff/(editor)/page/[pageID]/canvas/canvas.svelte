@@ -151,7 +151,15 @@
 		// same reasoning as the group effect below: a live marquee can pass
 		// through a transient single-element selection, and we don't want to
 		// attach/detach a Moveable instance for every intermediate frame.
-		if (!el || !targetEl || !paperEl || el.locked || marqueeRect || canvasStore.editingTextId === id) return;
+		if (
+			!el ||
+			!targetEl ||
+			!paperEl ||
+			el.locked ||
+			marqueeRect ||
+			canvasStore.editingTextId === id
+		)
+			return;
 
 		const guideEls = [...targetEls.values()].filter((node) => node !== targetEl);
 

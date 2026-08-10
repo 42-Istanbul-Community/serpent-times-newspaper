@@ -38,6 +38,7 @@ class PaperSync {
 		if (this.#hydratedId === row.id) return;
 		clearTimeout(this.#timer);
 
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const templateById = new Map(paperState.templates.map((t) => [t.id, t]));
 		for (const t of templates) templateById.set(t.id, t);
 		paperState.templates = [...templateById.values()];

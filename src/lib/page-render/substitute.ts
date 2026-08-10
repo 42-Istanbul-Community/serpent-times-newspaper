@@ -286,4 +286,3 @@ export function formatDateToken(format: string, date: Date = new Date()): string
 
 	return fmt.replaceAll(PERCENT_PLACEHOLDER, '%');
 }
-

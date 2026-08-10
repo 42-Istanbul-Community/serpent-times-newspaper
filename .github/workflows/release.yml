@@ -1,7 +1,5 @@
 name: release
 
-# A push to `prod` builds the image and publishes it to the organisation's
-# GitHub Container Registry. The server pulls it with compose - see the README.
 on:
   push:
     branches: [prod]
@@ -10,9 +8,6 @@ on:
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  REGISTRY: ghcr.io
 
 jobs:
   verify:
@@ -29,64 +24,55 @@ jobs:
           PUPPETEER_SKIP_DOWNLOAD: 'true'
 
       - run: bun run check
-
       - run: bun run lint
 
-  publish:
+  deploy:
     needs: verify
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
     steps:
       - uses: actions/checkout@v5
 
-      # the org name is mixed-case; ghcr only accepts lowercase paths
-      - id: image
-        run: echo "name=$REGISTRY/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
         env:
-          REPOSITORY: ${{ github.repository }}
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
 
-      - uses: docker/setup-buildx-action@v3
+      - name: Build SvelteKit application
+        run: bun run build
 
-      - uses: docker/login-action@v3
+      - name: Transfer build artifacts to ISPmanager server
+        uses: appleboy/rsync-action@v0.1.10
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: 'build/ drizzle/ drizzle.config.ts package.json bun.lock'
+          target: ${{ secrets.TARGET_DIR }}
+          delete: false
 
-      - id: meta
-        uses: docker/metadata-action@v5
+      - name: Run migrations & restart PM2 on server
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          images: ${{ steps.image.outputs.name }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix=sha-,format=short
-            type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            # Include standard Node, npm, bun, and PM2 directories in PATH
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:~/.nvm/versions/node/$(ls ~/.nvm/versions/node 2>/dev/null | tail -n 1)/bin:~/.bun/bin:/opt/node24/bin
 
-      - id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            cd ${{ secrets.TARGET_DIR }}
 
-      # lets the server verify an image really came out of this workflow
-      - uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: ${{ steps.image.outputs.name }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
+            # 1. Install dependencies
+            npm install || bun install
 
-      - run: |
-          echo "### Published" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo 'Deploy on the server with `docker compose pull && docker compose up -d --wait`.' >> $GITHUB_STEP_SUMMARY
+            # 2. Run database migrations
+            npx drizzle-kit migrate || bun run db:migrate || npx drizzle-kit push --force
+
+            # 3. Reload or start PM2 process
+            pm2 reload ${{ secrets.PM2_APP_NAME }} || pm2 restart ${{ secrets.PM2_APP_NAME }} || pm2 start build/index.js --name ${{ secrets.PM2_APP_NAME }}

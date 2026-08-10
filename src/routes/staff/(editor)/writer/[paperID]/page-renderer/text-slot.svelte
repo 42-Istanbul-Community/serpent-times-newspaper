@@ -19,14 +19,15 @@
 	// 'CoreImportExtension' before initialization"). It's a DOM editor, so
 	// there's nothing to render server-side anyway - until it mounts, the
 	// current value stands in.
-	let LexicalEditor = $state<typeof import('$lib/components/editor/lexical-editor.svelte').default>();
+	let LexicalEditor =
+		$state<typeof import('$lib/components/editor/lexical-editor.svelte').default>();
 	onMount(async () => {
 		LexicalEditor = (await import('$lib/components/editor/lexical-editor.svelte')).default;
 	});
 </script>
 
 <div
-	class="pdf-manual-slot group relative flex h-full w-full rounded-xs border-2 border-dashed border-slytherin/60 bg-slytherin/[0.04] hover:border-slytherin hover:bg-slytherin/[0.08] focus-within:border-solid focus-within:border-slytherin focus-within:bg-transparent focus-within:ring-2 focus-within:ring-slytherin/30 transition-all {el.type ===
+	class="pdf-manual-slot group relative flex h-full w-full rounded-xs border-2 border-dashed border-slytherin/60 bg-slytherin/[0.04] transition-all focus-within:border-solid focus-within:border-slytherin focus-within:bg-transparent focus-within:ring-2 focus-within:ring-slytherin/30 hover:border-slytherin hover:bg-slytherin/[0.08] {el.type ===
 	'title'
 		? verticalAlignClass(el.properties)
 		: 'items-stretch'}"

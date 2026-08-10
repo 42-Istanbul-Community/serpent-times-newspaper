@@ -18,7 +18,7 @@
 	let isContentLocked = $derived(field.group === 'Content' && element.properties.manual === 'true');
 
 	let selectOptions = $derived(
-		field.key === 'fontFamily' ? fontStore.options : field.options ?? []
+		field.key === 'fontFamily' ? fontStore.options : (field.options ?? [])
 	);
 </script>
 
@@ -130,13 +130,18 @@
 			<ChevronDown class="h-4 w-4 text-ui-text-muted" />
 		</Select.Trigger>
 		<Select.Portal>
-			<Select.Content class="z-50 max-h-60 overflow-y-auto rounded-md border border-ui-border bg-ui-surface p-1 shadow-md">
+			<Select.Content
+				class="z-50 max-h-60 overflow-y-auto rounded-md border border-ui-border bg-ui-surface p-1 shadow-md"
+			>
 				<Select.Viewport>
 					{#each selectOptions as option (option)}
 						<Select.Item
 							value={option}
 							label={option}
-							class="rounded px-2 py-1.5 text-sm text-ui-text-main data-[highlighted]:bg-ui-bg {option === '+ Add Font' ? 'font-bold text-slytherin border-b border-ui-border mb-1' : ''}"
+							class="rounded px-2 py-1.5 text-sm text-ui-text-main data-[highlighted]:bg-ui-bg {option ===
+							'+ Add Font'
+								? 'mb-1 border-b border-ui-border font-bold text-slytherin'
+								: ''}"
 						>
 							{option}
 						</Select.Item>

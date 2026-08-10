@@ -36,8 +36,14 @@ function sanitizeFilename(name: string) {
 	return path.basename(name).replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
-async function assertCdnOwnership(paramsPath: string, userId: string, localsUser: App.Locals['user']) {
-	const role = localsUser ? await resolveRole(localsUser as any) : null;
+async function assertCdnOwnership(
+	paramsPath: string,
+	userId: string,
+	localsUser: App.Locals['user']
+) {
+	const role = localsUser
+		? await resolveRole(localsUser as { id: string; role?: string | null })
+		: null;
 	if (role === 'admin' || role === 'dev') return;
 
 	const parts = paramsPath.split('/');
@@ -62,7 +68,10 @@ async function assertCdnOwnership(paramsPath: string, userId: string, localsUser
 		if (row && row.userId !== userId && role !== 'editor') {
 			error(403, 'Forbidden: Not your article');
 		}
-	} else if ((category === 'page' || category === 'page-template') && Number.isInteger(resourceId)) {
+	} else if (
+		(category === 'page' || category === 'page-template') &&
+		Number.isInteger(resourceId)
+	) {
 		const [row] = await db
 			.select({ userId: pageTemplate.userId })
 			.from(pageTemplate)
