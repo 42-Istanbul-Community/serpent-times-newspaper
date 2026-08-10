@@ -45,15 +45,14 @@ jobs:
         run: bun run build
 
       - name: Transfer build artifacts to ISPmanager server
-        uses: appleboy/rsync-action@v0.1.10
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: 'build/ drizzle/ drizzle.config.ts package.json bun.lock'
+          source: "build,drizzle,drizzle.config.ts,package.json,bun.lock"
           target: ${{ secrets.TARGET_DIR }}
-          delete: false
 
       - name: Run migrations & restart PM2 on server
         uses: appleboy/ssh-action@v1.0.3
