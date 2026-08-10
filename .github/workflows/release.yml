@@ -76,5 +76,5 @@ jobs:
             # 2. Run database migrations
             npx drizzle-kit migrate || bun run db:migrate || npx drizzle-kit push --force
 
-            # 3. Reload or start PM2 process
-            npx pm2 reload ${{ secrets.PM2_APP_NAME }} || npx pm2 restart ${{ secrets.PM2_APP_NAME }} || npx pm2 start build/index.js --name ${{ secrets.PM2_APP_NAME }}
+            # 3. Reload or start PM2 process with --env-file=.env
+            npx pm2 reload ${{ secrets.PM2_APP_NAME }} || npx pm2 restart ${{ secrets.PM2_APP_NAME }} || npx pm2 start build/index.js --name ${{ secrets.PM2_APP_NAME }} --node-args="--env-file=.env"
