@@ -51,7 +51,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "build,drizzle,drizzle.config.ts,package.json,bun.lock"
+          source: 'build,drizzle,drizzle.config.ts,package.json,bun.lock'
           target: ${{ secrets.TARGET_DIR }}
 
       - name: Run migrations & restart PM2 on server
