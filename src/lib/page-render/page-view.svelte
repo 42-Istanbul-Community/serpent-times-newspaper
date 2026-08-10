@@ -1,10 +1,17 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
-	import { boxAppearanceStyle } from '$lib/canvas/element-style';
+	import { boxAppearanceStyle, pageBackgroundStyle } from '$lib/canvas/element-style';
 	import type { CanvasElement, CanvasNode } from '$lib/types/canvas';
 	import type { Credits, Role, TocEntry } from '$lib/edition/assemble';
-	import { buildIndexContent, substituteToken } from './substitute';
+	import {
+		buildIndexContent,
+		formatDateToken,
+		getSampleCitationNames,
+		getSampleIndexEntries,
+		substituteCitation,
+		substituteToken
+	} from './substitute';
 	import StaticContent from './static-content.svelte';
 
 	// matches canvas.svelte's own local PAPER_WIDTH/PAPER_HEIGHT consts (not
@@ -13,10 +20,7 @@
 	const PAPER_HEIGHT = 960;
 
 	// One assembled page, rendered the same way everywhere it appears: the
-	// newspaper editor (which passes `manualSlot` to make the cover's slots
-	// typeable), the homepage reader, and the print route the PDF bake
-	// screenshots. Without `manualSlot` this is entirely static - the reader
-	// must never be handed editing chrome.
+	// editor (cover thumbnails, reader preview) and the reader itself.
 	let {
 		role,
 		pageNumber,
@@ -24,7 +28,9 @@
 		tocEntries,
 		credits,
 		nodes,
-		slotValues,
+		slotValues = {},
+		backgroundColor = '#fbf8f1',
+		backgroundImage = '',
 		manualSlot,
 		registerEl
 	}: {
@@ -34,16 +40,32 @@
 		tocEntries: TocEntry[];
 		credits: Credits;
 		nodes: CanvasNode[];
-		slotValues: Record<string, string>;
+		slotValues?: Record<string, string>;
+		backgroundColor?: string;
+		backgroundImage?: string;
 		manualSlot?: Snippet<[CanvasElement]>;
 		registerEl?: Attachment<HTMLElement>;
 	} = $props();
 
-	// a group has no visual presence of its own on the canvas (same rule as
-	// canvasStore.elements) - flatten it away entirely for rendering.
+	import { fontStore } from '$lib/data/fonts.svelte';
+
 	function flatten(nodes: CanvasNode[]): CanvasElement[] {
-		return nodes.flatMap((n) => (n.kind === 'group' ? n.children : [n]));
+		const flat: CanvasElement[] = [];
+		for (const node of nodes) {
+			if (node.kind === 'element') flat.push(node);
+			else flat.push(...node.children);
+		}
+		return flat;
 	}
+
+	// ensure any Google or custom fonts used in elements are loaded into the page
+	$effect(() => {
+		for (const el of flatten(nodes)) {
+			if (el.properties.fontFamily) {
+				fontStore.ensureFontLoaded(el.properties.fontFamily);
+			}
+		}
+	});
 
 	// manual editing is only ever available on the cover - the one page role
 	// with no automatic source of content. Index is fully auto-generated (its
@@ -100,10 +122,33 @@
 		if (el.type === 'page-number')
 			return substituteToken(el.properties.content, String(pageNumber));
 		if (el.type === 'citation') {
-			const names = citationUserIds(el.properties.citationType).map((id) => userNames[id] ?? id);
-			return substituteToken(el.properties.content, names.join(', '));
+			const realNames = citationUserIds(el.properties.citationType).map(
+				(id) => userNames[id] ?? id
+			);
+			const names =
+				realNames.length > 0
+					? realNames
+					: getSampleCitationNames(
+							`${el.id}-${el.properties.citationType}`,
+							el.height,
+							el.properties.fontSize,
+							el.properties.lineHeight
+						);
+			return substituteCitation(el.properties.content, names);
 		}
-		if (el.type === 'index') return buildIndexContent(el.properties.entryFormat, tocEntries);
+		if (el.type === 'index') {
+			const entries =
+				tocEntries && tocEntries.length > 0
+					? tocEntries
+					: getSampleIndexEntries(
+							`${el.id}-index`,
+							el.height,
+							el.properties.fontSize,
+							el.properties.lineHeight
+						);
+			return buildIndexContent(el.properties.entryFormat || '{title} .... {page}', entries);
+		}
+		if (el.type === 'date') return formatDateToken(el.properties.content);
 		if (isFillable(el)) return slotValues[el.id] || el.properties.content;
 		return el.properties.content;
 	}
@@ -114,7 +159,10 @@
 <div
 	{@attach (node) => registerEl?.(node)}
 	class="pdf-page relative mx-auto shrink-0 border border-paper-rule shadow-sm"
-	style="width: {PAPER_WIDTH}px; height: {PAPER_HEIGHT}px; background-color: #fbf8f1;"
+	style="width: {PAPER_WIDTH}px; height: {PAPER_HEIGHT}px; {pageBackgroundStyle(
+		backgroundColor,
+		backgroundImage
+	)}"
 >
 	<!-- canvasStore.elements is front-to-back (index 0 = topmost); DOM order
 	     paints later siblings on top, so reverse it here - same rule

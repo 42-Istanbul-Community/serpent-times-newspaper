@@ -1,8 +1,12 @@
 import { error, json } from '@sveltejs/kit';
+import { eq } from 'drizzle-orm';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CDN_ROOT } from '$lib/server/cdn-root';
+import { db } from '$lib/server/db';
+import { article, newspaperEdition, pageTemplate } from '$lib/server/db/schema';
 import { requireSectionUserId } from '$lib/server/require-login';
+import { resolveRole } from '$lib/server/roles';
 import type { RequestHandler } from './$types';
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -13,7 +17,11 @@ const CONTENT_TYPES: Record<string, string> = {
 	'.webp': 'image/webp',
 	'.svg': 'image/svg+xml',
 	'.avif': 'image/avif',
-	'.pdf': 'application/pdf'
+	'.pdf': 'application/pdf',
+	'.ttf': 'font/ttf',
+	'.otf': 'font/otf',
+	'.woff': 'font/woff',
+	'.woff2': 'font/woff2'
 };
 
 function resolveCdnPath(segments: string) {
@@ -26,6 +34,52 @@ function resolveCdnPath(segments: string) {
 
 function sanitizeFilename(name: string) {
 	return path.basename(name).replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+async function assertCdnOwnership(
+	paramsPath: string,
+	userId: string,
+	localsUser: App.Locals['user']
+) {
+	const role = localsUser
+		? await resolveRole(localsUser as { id: string; role?: string | null })
+		: null;
+	if (role === 'admin' || role === 'dev') return;
+
+	const parts = paramsPath.split('/');
+	const category = parts[0];
+	const resourceId = Number(parts[1]);
+
+	if (category === 'fonts') return; // Shared font assets
+
+	if (category === 'newspaper' && Number.isInteger(resourceId)) {
+		const [row] = await db
+			.select({ userId: newspaperEdition.userId })
+			.from(newspaperEdition)
+			.where(eq(newspaperEdition.id, resourceId));
+		if (row && row.userId !== userId && role !== 'editor') {
+			error(403, 'Forbidden: Not your newspaper edition');
+		}
+	} else if (category === 'writer' && Number.isInteger(resourceId)) {
+		const [row] = await db
+			.select({ userId: article.userId })
+			.from(article)
+			.where(eq(article.id, resourceId));
+		if (row && row.userId !== userId && role !== 'editor') {
+			error(403, 'Forbidden: Not your article');
+		}
+	} else if (
+		(category === 'page' || category === 'page-template') &&
+		Number.isInteger(resourceId)
+	) {
+		const [row] = await db
+			.select({ userId: pageTemplate.userId })
+			.from(pageTemplate)
+			.where(eq(pageTemplate.id, resourceId));
+		if (row && row.userId !== userId && role !== 'designer') {
+			error(403, 'Forbidden: Not your page template');
+		}
+	}
 }
 
 // GET /api/cdn/<group/path?> — a file streams its raw bytes (e.g. for
@@ -60,6 +114,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		});
 	}
 
+	// Directory listing requires authentication
+	if (!locals.user) {
+		error(401, 'Not authenticated');
+	}
+
 	const entries = await readdir(target, { withFileTypes: true });
 	const items = await Promise.all(
 		entries.map(async (entry) => {
@@ -77,9 +136,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 };
 
 // POST /api/cdn/<group/path?> — multipart form with a `file` field, uploads into that group
-// (missing groups in the path are created automatically)
 export const POST: RequestHandler = async ({ params, request, locals }) => {
-	await requireSectionUserId(locals, 'page', 'newspaper', 'writer');
+	const userId = await requireSectionUserId(locals, 'page', 'newspaper', 'writer');
+	if (params.path) {
+		await assertCdnOwnership(params.path, userId, locals.user);
+	}
 
 	const dir = resolveCdnPath(params.path ?? '');
 
@@ -100,7 +161,10 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
 // DELETE /api/cdn/<group/path> — deletes a file, or a whole group (recursively) if given a folder
 export const DELETE: RequestHandler = async ({ params, locals }) => {
-	await requireSectionUserId(locals, 'page', 'newspaper', 'writer');
+	const userId = await requireSectionUserId(locals, 'page', 'newspaper', 'writer');
+	if (params.path) {
+		await assertCdnOwnership(params.path, userId, locals.user);
+	}
 
 	const target = resolveCdnPath(params.path ?? '');
 	if (target === CDN_ROOT) {

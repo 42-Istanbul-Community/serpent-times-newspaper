@@ -63,7 +63,8 @@
 		List,
 		ListOrdered
 	} from '@lucide/svelte';
-	import { FONT_FAMILY_OPTIONS, FONT_SIZE_OPTIONS } from '$lib/data/components/base-fields';
+	import { FONT_SIZE_OPTIONS } from '$lib/data/components/base-fields';
+	import { fontStore } from '$lib/data/fonts.svelte';
 
 	let {
 		value,
@@ -376,15 +377,21 @@
 		<div class="h-5 w-px bg-ui-border"></div>
 		<select
 			onchange={(e) => {
-				applyStyle({ 'font-family': e.currentTarget.value });
+				const val = e.currentTarget.value;
+				if (val === '+ Add Font') {
+					fontStore.openModal();
+					return;
+				}
+				applyStyle({ 'font-family': val });
 				refocusEditor();
 			}}
 			aria-label="Font"
-			class="rounded border border-transparent bg-transparent text-xs hover:border-ui-border"
+			class="rounded border border-transparent bg-transparent text-xs font-medium hover:border-ui-border"
 		>
 			<option value="" selected disabled>Font</option>
-			{#each FONT_FAMILY_OPTIONS as font (font)}
-				<option value={font}>{font}</option>
+			<option value="+ Add Font" class="font-bold text-slytherin">+ Add Font</option>
+			{#each fontStore.fonts as font (font.name)}
+				<option value={font.name}>{font.name}</option>
 			{/each}
 		</select>
 		<select

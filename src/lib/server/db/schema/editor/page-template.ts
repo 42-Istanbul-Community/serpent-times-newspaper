@@ -16,6 +16,12 @@ export const pageTemplate = pgTable('page_template', {
 	// by an automatic periodic screenshot job.
 	cdnUrl: text('cdn_url'),
 	elements: jsonb('elements').$type<CanvasNode[]>().notNull().default([]),
+	// the paper's own background, set from the properties panel (see
+	// canvas-state.svelte.ts's pageBackgroundColor/pageBackgroundImage) -
+	// matches --color-canvas-paper's default so an un-customized template
+	// looks the same as before this existed.
+	backgroundColor: text('background_color').notNull().default('#fbf8f1'),
+	backgroundImage: text('background_image'),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: timestamp('updated_at', { withTimezone: true })
 		.notNull()

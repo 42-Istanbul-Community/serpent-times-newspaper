@@ -18,11 +18,66 @@
 		Trash2
 	} from '@lucide/svelte';
 	import { canvasStore, type CanvasElement } from '../canvas-state.svelte';
-	import { uploadImage } from '../upload-image';
+	import { uploadImage } from '$lib/components/editor/upload-image';
 	import { boxAppearanceStyle, textBoxStyle, verticalAlignClass } from '$lib/canvas/element-style';
+	import {
+		buildIndexContent,
+		formatDateToken,
+		getSampleCitationNames,
+		getSampleIndexEntries,
+		substituteCitation,
+		substituteToken
+	} from '$lib/page-render/substitute';
+
+	import { onMount } from 'svelte';
+	import DOMPurify from 'isomorphic-dompurify';
+	import type { Component } from 'svelte';
 
 	let { el, targetEls }: { el: CanvasElement; targetEls: SvelteMap<string, HTMLDivElement> } =
 		$props();
+
+	let LexicalEditor = $state<
+		Component<{
+			value: string;
+			onchange: (html: string) => void;
+			textStyle?: string;
+			placeholder?: string;
+		}>
+	>();
+
+	onMount(async () => {
+		LexicalEditor = (await import('$lib/components/editor/lexical-editor.svelte')).default;
+	});
+
+	function displayContent(element: CanvasElement): string {
+		if (element.type === 'citation') {
+			const seed = `${element.id}-${element.properties.citationType}`;
+			const sampleNames = getSampleCitationNames(
+				seed,
+				element.height,
+				element.properties.fontSize,
+				element.properties.lineHeight
+			);
+			return substituteCitation(element.properties.content, sampleNames);
+		}
+		if (element.type === 'page-number') {
+			return substituteToken(element.properties.content, '1');
+		}
+		if (element.type === 'index') {
+			const seed = `${element.id}-index`;
+			const entries = getSampleIndexEntries(
+				seed,
+				element.height,
+				element.properties.fontSize,
+				element.properties.lineHeight
+			);
+			return buildIndexContent(element.properties.entryFormat || '{title} .... {page}', entries);
+		}
+		if (element.type === 'date') {
+			return formatDateToken(element.properties.content);
+		}
+		return element.properties.content;
+	}
 
 	// registers this element's DOM node into the parent's shared targetEls
 	// map (read by canvas.svelte's Moveable effects) - an action instead of
@@ -73,6 +128,11 @@
 				{...props}
 				use:registerTarget
 				onpointerdown={handlePointerDown}
+				ondblclick={() => {
+					if (el.type === 'text' && !el.locked) {
+						canvasStore.startEditingText(el.id);
+					}
+				}}
 				class="absolute overflow-hidden {canvasStore.selectedIds.has(el.id)
 					? 'outline outline-2 outline-offset-1 outline-slytherin outline-dashed'
 					: ''}"
@@ -88,30 +148,45 @@
 						ondrop={handleDrop}
 						class="h-full w-full"
 					>
-						{#if el.properties.src}
-							<img
-								src={el.properties.src}
-								alt=""
-								class="h-full w-full"
-								style="object-fit: {el.properties.objectFit};"
-							/>
-						{:else}
-							<div
-								class="flex h-full w-full items-center justify-center text-xs text-paper-placeholder"
-							>
-								Drop an image
-							</div>
-						{/if}
+						<img
+							src={el.properties.src || '/sample-image.jpg'}
+							alt=""
+							class="pointer-events-none h-full w-full select-none"
+							style="object-fit: {el.properties.objectFit ?? 'cover'};"
+						/>
 					</div>
 				{:else if el.type === 'rectangle'}
 					<!-- a rectangle IS just the outer box (fill/border/radius/shadow above) -->
+				{:else if el.type === 'text'}
+					{#if LexicalEditor && canvasStore.editingTextId === el.id}
+						<LexicalEditor
+							value={el.properties.content ?? ''}
+							onchange={(html) => (el.properties.content = html)}
+							textStyle="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(
+								el.properties
+							)}"
+							placeholder="Enter text..."
+						/>
+					{:else}
+						<div class="flex h-full w-full px-1 {verticalAlignClass(el.properties)}">
+							<span
+								class="w-full whitespace-pre-line"
+								style="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(
+									el.properties
+								)}"
+							>
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+								{@html DOMPurify.sanitize(displayContent(el))}
+							</span>
+						</div>
+					{/if}
 				{:else}
 					<div class="flex h-full w-full px-1 {verticalAlignClass(el.properties)}">
 						<span
 							class="w-full whitespace-pre-line"
 							style="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(el.properties)}"
 						>
-							{el.properties.content}
+							{displayContent(el)}
 						</span>
 					</div>
 				{/if}

@@ -7,8 +7,8 @@ export const categoryOptions: TemplateCategoryOption[] = [
 	{ value: 'citation', label: 'Citation' }
 ];
 
-// the pageTemplate's own title/type/description.
-// TODO: bind to the real pageTemplate row once this editor is wired to the db.
+// the pageTemplate's own title/type/description - hydrated from and
+// autosaved back to the real row by template-sync.svelte.ts.
 class IdentityState {
 	title = $state('');
 	description = $state('');

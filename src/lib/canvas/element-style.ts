@@ -2,6 +2,20 @@
 // falls back to a sane default so this stays safe to call for component
 // types that don't define a given property yet.
 
+// the page/paper's own background - the designer's canvas.svelte applies the
+// same two properties via style:background-color/style:background-image
+// (kept as separate style: directives there since it also needs bg-cover
+// bg-center classes); every other place a template renders is a plain style
+// string, so this covers the color+image combo the same way.
+export function pageBackgroundStyle(backgroundColor: string, backgroundImage: string): string {
+	return [
+		`background-color: ${backgroundColor}`,
+		`background-image: ${backgroundImage ? `url("${backgroundImage}")` : 'none'}`,
+		`background-size: cover`,
+		`background-position: center`
+	].join('; ');
+}
+
 // applied to every element's outer box, regardless of type - fill, border,
 // corner radius, opacity and drop shadow all make sense on text, an image
 // or a plain rectangle alike.

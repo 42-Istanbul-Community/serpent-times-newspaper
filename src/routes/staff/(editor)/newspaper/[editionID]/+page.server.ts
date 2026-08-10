@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { and, eq, inArray, ne } from 'drizzle-orm';
+import { and, eq, inArray, ne, or } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, newspaperEdition, pageTemplate } from '$lib/server/db/schema';
 import { loadAuthors } from '$lib/server/authors';
@@ -51,7 +51,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			? await db.select().from(pageTemplate).where(inArray(pageTemplate.id, templateIds))
 			: [];
 
-	// pickable templates per role - approved (used/unused, never draft) only,
+	// any approved template in the DB - page designer templates are shared
+	// across all users (an approved template can be picked by any editor),
 	// and from any designer, same rule the writer's template picker uses.
 	const approved = inArray(pageTemplate.availability, ['used', 'unused'] as const);
 	const [pickableCover, pickableIndex, pickableCitation] = await Promise.all(
@@ -63,18 +64,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		)
 	);
 
-	// "unwritten" papers: every one of the user's own category='page'
-	// articles not already placed in ANY of their editions (union articleIds
-	// across editions in JS - jsonb array membership isn't a simple SQL
-	// predicate here). Not restricted to status='published' - assembling a
-	// newspaper is itself a draft process, so a still-drafting paper can be
-	// placed and finished alongside it; the edition's own Publish is what
-	// makes the whole thing live, independent of each paper's own status.
-	// excludes this edition itself - a paper it currently holds is still
-	// "available" the moment it's removed, without needing a reload. It's
-	// still correctly hidden from the picker while placed, via editionState's
-	// own client-side articleIds filter (see paper-picker.svelte) - this list
-	// only needs to account for OTHER editions already claiming a paper.
+	// "unwritten" papers: category='page' articles not already placed in ANY
+	// edition. Authors can pick their own drafts or published papers, while
+	// editors can also pick published papers written by other authors.
 	const allEditions = await db
 		.select({ articleIds: newspaperEdition.articleIds })
 		.from(newspaperEdition)
@@ -88,7 +80,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			userId: article.userId
 		})
 		.from(article)
-		.where(and(eq(article.userId, userId), eq(article.category, 'page')));
+		.where(
+			and(
+				eq(article.category, 'page'),
+				or(eq(article.userId, userId), eq(article.status, 'published'))
+			)
+		);
 
 	const availablePapers = papers.filter((p) => !usedPaperIds.has(p.id));
 

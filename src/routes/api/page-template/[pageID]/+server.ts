@@ -41,6 +41,18 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 	if (Array.isArray(body.elements)) patch.elements = body.elements;
 	if (typeof body.title === 'string') patch.title = body.title;
 	if (typeof body.description === 'string') patch.description = body.description;
+	if (typeof body.backgroundColor === 'string') patch.backgroundColor = body.backgroundColor;
+	// same rule as cdnUrl below: only ever a same-origin CDN path this app
+	// generated itself (see image-dropzone.svelte -> upload-image.ts), or ''
+	// to clear a custom background image back to none.
+	if (body.backgroundImage === '') {
+		patch.backgroundImage = null;
+	} else if (
+		typeof body.backgroundImage === 'string' &&
+		body.backgroundImage.startsWith('/api/cdn/')
+	) {
+		patch.backgroundImage = body.backgroundImage;
+	}
 	if (
 		typeof body.category === 'string' &&
 		pageTemplateCategory.enumValues.includes(body.category)

@@ -24,7 +24,7 @@
 	} from 'moveable';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { canvasStore } from '../canvas-state.svelte';
-	import { uploadImage } from '../upload-image';
+	import { uploadImage } from '$lib/components/editor/upload-image';
 	import CanvasElement from './canvas-element.svelte';
 	import { canvasHistory } from './canvas-history';
 	import MarqueeOverlay from './marquee-overlay.svelte';
@@ -151,7 +151,15 @@
 		// same reasoning as the group effect below: a live marquee can pass
 		// through a transient single-element selection, and we don't want to
 		// attach/detach a Moveable instance for every intermediate frame.
-		if (!el || !targetEl || !paperEl || el.locked || marqueeRect) return;
+		if (
+			!el ||
+			!targetEl ||
+			!paperEl ||
+			el.locked ||
+			marqueeRect ||
+			canvasStore.editingTextId === id
+		)
+			return;
 
 		const guideEls = [...targetEls.values()].filter((node) => node !== targetEl);
 
@@ -250,7 +258,7 @@
 		// would otherwise tear down and rebuild this whole native Moveable
 		// instance on every intermediate frame of the gesture - wait for the
 		// drag to settle (marqueeRect back to null) before attaching it.
-		if (ids.length <= 1 || !paperEl || marqueeRect) return;
+		if (ids.length <= 1 || !paperEl || marqueeRect || canvasStore.editingTextId !== null) return;
 
 		const idByTarget = new SvelteMap<HTMLElement | SVGElement, string>();
 		for (const id of ids) {

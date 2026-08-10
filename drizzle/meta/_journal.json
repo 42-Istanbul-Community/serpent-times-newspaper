@@ -43,6 +43,13 @@
       "when": 1786117283130,
       "tag": "0005_known_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786232276998,
+      "tag": "0006_spicy_sage",
+      "breakpoints": true
     }
   ]
 }

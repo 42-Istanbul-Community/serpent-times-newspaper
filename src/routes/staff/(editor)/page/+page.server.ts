@@ -2,7 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { resolve } from '$app/paths';
 import { db } from '$lib/server/db';
-import { pageTemplate, pageTemplateCategory } from '$lib/server/db/schema';
+import { article, pageTemplate, pageTemplateCategory } from '$lib/server/db/schema';
 import { requireUserId } from '$lib/server/require-login';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -42,11 +42,21 @@ export const actions: Actions = {
 
 		redirect(303, resolve('/staff/(editor)/page/[pageID]', { pageID: String(row.id) }));
 	},
-	// drafts only - an approved template may already be in use by a paper.
 	delete: async ({ request, locals }) => {
 		const userId = requireUserId(locals);
 		const id = Number((await request.formData()).get('id'));
 		if (!Number.isInteger(id)) return fail(400, { message: 'Invalid id' });
+
+		// Check if template is referenced by any article pages
+		const allArticles = await db.select({ pages: article.pages }).from(article);
+		const isReferenced = allArticles.some((a) =>
+			(a.pages as Array<{ pageTemplateId: number }> | undefined)?.some(
+				(p) => p.pageTemplateId === id
+			)
+		);
+		if (isReferenced) {
+			return fail(400, { message: 'Template is in use by an article and cannot be deleted.' });
+		}
 
 		await db
 			.delete(pageTemplate)

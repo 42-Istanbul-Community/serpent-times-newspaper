@@ -4,6 +4,9 @@
 	let { el, src }: { el: CanvasElement; src: string | undefined } = $props();
 </script>
 
-{#if src}
-	<img {src} alt="" class="h-full w-full" style="object-fit: {el.properties.objectFit};" />
-{/if}
+<img
+	src={src || '/sample-image.jpg'}
+	alt=""
+	class="h-full w-full"
+	style="object-fit: {el.properties.objectFit ?? 'cover'};"
+/>

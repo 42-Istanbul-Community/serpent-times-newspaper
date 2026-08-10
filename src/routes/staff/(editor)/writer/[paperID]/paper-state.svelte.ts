@@ -124,7 +124,6 @@ class PaperState {
 			this.selectPage(this.#armedId);
 			(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 		}
-		if (this.draggedId === null) return;
 
 		const candidates = this.pages
 			.map((p, index) => ({ id: p.id, index }))

@@ -1,18 +1,23 @@
 <script lang="ts">
 	import { Dialog } from 'bits-ui';
 	import { FileText, X } from '@lucide/svelte';
-	import { editionState, type TemplateRow } from './edition-state.svelte';
 	import AuthorBadge from '$lib/author-badge.svelte';
+	import type { AuthorMap } from '$lib/authors';
+	import type { TemplateRow } from '$lib/edition/assemble';
 
 	let {
 		open = $bindable(false),
 		title,
 		templates,
+		authors,
+		emptyMessage = 'No approved templates yet - approve one in the page editor first.',
 		onpick
 	}: {
 		open?: boolean;
 		title: string;
 		templates: TemplateRow[];
+		authors: AuthorMap;
+		emptyMessage?: string;
 		onpick: (template: TemplateRow) => void;
 	} = $props();
 </script>
@@ -31,9 +36,7 @@
 			</div>
 
 			{#if templates.length === 0}
-				<p class="text-sm text-ui-text-muted">
-					No approved templates yet - approve one in the page editor first.
-				</p>
+				<p class="text-sm text-ui-text-muted">{emptyMessage}</p>
 			{:else}
 				<div class="grid grid-cols-3 gap-3">
 					{#each templates as template (template.id)}
@@ -55,7 +58,7 @@
 								{/if}
 							</div>
 							<span class="truncate text-xs font-medium text-ui-text-main">{template.title}</span>
-							<AuthorBadge author={editionState.authors[template.userId]} />
+							<AuthorBadge author={authors[template.userId]} />
 						</button>
 					{/each}
 				</div>

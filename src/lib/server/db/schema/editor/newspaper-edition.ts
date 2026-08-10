@@ -20,7 +20,9 @@ export const newspaperEdition = pgTable('newspaper_edition', {
 	// pageTemplate (with a different category), so they reference article.id.
 	// cover is a single page, filled in by the editor while assembling the
 	// edition. nullable since it may not have been picked yet.
-	coverArticleId: integer('cover_article_id').references(() => article.id),
+	coverArticleId: integer('cover_article_id').references(() => article.id, {
+		onDelete: 'set null'
+	}),
 	// index can span multiple pages, hence the array (order = page order).
 	// picked/placed by the editor same as the cover (manual title/text/image
 	// slots), just not written from scratch.
