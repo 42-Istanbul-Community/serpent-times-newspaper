@@ -1,17 +1,11 @@
 import { error, json } from '@sveltejs/kit';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { article, publicationStatus } from '$lib/server/db/schema';
 import { requireSectionUserId, requireUserId } from '$lib/server/require-login';
 import type { RequestHandler } from './$types';
 
-// GET /api/article/<articleID> - fetches one full article row (id/title/
-// pages/etc.) for the current user. Used by the newspaper editor when a body
-// paper is picked from the paper-picker: editionState only ever holds rows
-// for articles referenced at load time, so a freshly added paper needs its
-// row fetched and registered client-side before it can render (see
-// edition-sync.svelte.ts's addPaper) - otherwise it silently stays invisible
-// until the next full page load re-hydrates from the server.
+// GET /api/article/<articleID> - fetches one full article row for current user's own articles or published articles.
 export const GET: RequestHandler = async ({ params, locals }) => {
 	const id = Number(params.articleID);
 	if (!Number.isInteger(id)) error(400, 'Invalid id');
@@ -20,7 +14,12 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	const [row] = await db
 		.select()
 		.from(article)
-		.where(and(eq(article.id, id), eq(article.userId, userId)));
+		.where(
+			and(
+				eq(article.id, id),
+				or(eq(article.userId, userId), eq(article.status, 'published'))
+			)
+		);
 
 	if (!row) error(404, 'Not found');
 

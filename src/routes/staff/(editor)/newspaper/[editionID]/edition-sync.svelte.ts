@@ -15,7 +15,7 @@ import {
 	type TemplateRow
 } from './edition-state.svelte';
 import type { AuthorMap } from '$lib/authors';
-import { captureAndUploadThumbnail } from './capture-thumbnail';
+import { captureAndUploadThumbnail } from '$lib/components/editor/capture-thumbnail';
 import type { newspaperEdition as editionTable } from '$lib/server/db/schema';
 import type { ArticlePage } from '$lib/server/db/schema/editor/article';
 
@@ -60,16 +60,21 @@ class EditionSync {
 		availablePapers: PickablePaper[],
 		authors: AuthorMap
 	) {
-		// see paper-sync's hydrate: the pickable lists are design data, so they
-		// refresh on every load, not just the first one for this edition.
+		if (this.#hydratedId === row.id) return;
+		clearTimeout(this.#timer);
+
+		const templateById = new Map(editionState.templates.map((t) => [t.id, t]));
+		for (const t of templates) templateById.set(t.id, t);
+		editionState.templates = [...templateById.values()];
+		editionState.articles = {
+			...editionState.articles,
+			...Object.fromEntries(articles.map((a) => [a.id, a]))
+		};
 		editionState.pickableCover = pickableCover;
 		editionState.pickableIndex = pickableIndex;
 		editionState.pickableCitation = pickableCitation;
 		editionState.availablePapers = availablePapers;
 		editionState.authors = authors;
-
-		if (this.#hydratedId === row.id) return;
-		clearTimeout(this.#timer);
 
 		editionState.editionId = row.id;
 		editionState.title = row.title;
@@ -78,13 +83,6 @@ class EditionSync {
 		editionState.indexArticleIds = row.indexArticleIds;
 		editionState.citationArticleIds = row.citationArticleIds;
 		editionState.articleIds = row.articleIds;
-		editionState.articles = Object.fromEntries(articles.map((a) => [a.id, a]));
-		editionState.templates = templates;
-		editionState.pickableCover = pickableCover;
-		editionState.pickableIndex = pickableIndex;
-		editionState.pickableCitation = pickableCitation;
-		editionState.availablePapers = availablePapers;
-		editionState.authors = authors;
 
 		this.#hydratedId = row.id;
 		this.status = row.status;
@@ -135,6 +133,29 @@ class EditionSync {
 		);
 	}
 
+	async saveNow() {
+		clearTimeout(this.#timer);
+		const id = editionState.editionId;
+		if (id === null) return;
+		const snapshot = snapshotOf(
+			id,
+			editionState.title,
+			editionState.coverArticleId,
+			editionState.indexArticleIds,
+			editionState.citationArticleIds,
+			editionState.articleIds
+		);
+		await this.#save(
+			id,
+			editionState.title,
+			editionState.coverArticleId,
+			editionState.indexArticleIds,
+			editionState.citationArticleIds,
+			editionState.articleIds,
+			snapshot
+		);
+	}
+
 	async #save(
 		id: number,
 		title: string,
@@ -181,7 +202,7 @@ class EditionSync {
 		if (this.#capturingThumbnail || !el) return;
 		this.#capturingThumbnail = true;
 		try {
-			const cdnUrl = await captureAndUploadThumbnail(id, el);
+			const cdnUrl = await captureAndUploadThumbnail(`/api/cdn/newspaper/${id}`, el);
 			if (!cdnUrl) return;
 			await fetch(`/api/newspaper-edition/${id}`, {
 				method: 'PATCH',
@@ -270,6 +291,7 @@ export async function pickTemplate(role: 'cover' | 'index' | 'citation', templat
 	if (role === 'cover') {
 		const oldId = editionState.coverArticleId;
 		editionState.coverArticleId = row.id;
+		await editionSync.saveNow();
 		if (oldId !== null) await removeArticleRow(oldId);
 	} else if (role === 'index') {
 		editionState.indexArticleIds = [...editionState.indexArticleIds, row.id];
@@ -282,6 +304,7 @@ export async function removeCover() {
 	const oldId = editionState.coverArticleId;
 	if (oldId === null) return;
 	editionState.coverArticleId = null;
+	await editionSync.saveNow();
 	await removeArticleRow(oldId);
 }
 

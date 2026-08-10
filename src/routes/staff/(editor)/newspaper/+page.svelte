@@ -2,8 +2,9 @@
 	import { resolve } from '$app/paths';
 	import { applyAction, deserialize, enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import { ChevronDown, ChevronUp, FileUp, Newspaper, Plus, Trash2, Upload } from '@lucide/svelte';
+	import { ChevronDown, ChevronUp, FileUp, Newspaper, Plus, Upload } from '@lucide/svelte';
 	import DraftBadge from '$lib/draft-badge.svelte';
+	import DeleteButton from '$lib/components/editor/delete-button.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -204,7 +205,7 @@
 	<div class="relative">
 		{#if e.status === 'draft'}
 			<DraftBadge />
-			{@render deleteButton(e.id, e.title)}
+			<DeleteButton id={e.id} title={e.title} />
 		{/if}
 		<!-- uploaded editions open the same editor, just read-only: rename,
 		     publish and download, with the PDF itself where the pages go. -->
@@ -263,22 +264,6 @@
 			{:else}
 				<ChevronDown class="h-4 w-4" />
 			{/if}
-		</button>
-	</form>
-{/snippet}
-
-{#snippet deleteButton(id: number, title: string)}
-	<form method="POST" action="?/delete" use:enhance class="absolute top-3.5 right-3.5 z-10">
-		<input type="hidden" name="id" value={id} />
-		<button
-			type="submit"
-			aria-label="Delete {title}"
-			onclick={(e) => {
-				if (!confirm(`Delete "${title}"? This can't be undone.`)) e.preventDefault();
-			}}
-			class="rounded-md bg-ui-surface/90 p-1 text-ui-text-muted shadow-sm transition-colors hover:text-danger"
-		>
-			<Trash2 class="h-4 w-4" />
 		</button>
 	</form>
 {/snippet}

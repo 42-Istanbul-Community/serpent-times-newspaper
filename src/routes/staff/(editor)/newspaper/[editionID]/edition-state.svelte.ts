@@ -72,7 +72,6 @@ class SectionDrag {
 			this.draggedId = this.#armedId;
 			(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 		}
-		if (this.draggedId === null) return;
 
 		const candidates = this.#getArray()
 			.map((id, index) => ({ id, index }))

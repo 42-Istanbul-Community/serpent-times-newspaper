@@ -18,6 +18,13 @@ class CanvasHistory {
 	#lastSnapshot = '[]';
 	#timer: ReturnType<typeof setTimeout> | undefined;
 
+	seed(nodes: CanvasNode[]) {
+		clearTimeout(this.#timer);
+		this.#undoStack = [];
+		this.#redoStack = [];
+		this.#lastSnapshot = JSON.stringify(nodes);
+	}
+
 	track(nodes: CanvasNode[]) {
 		const snapshot = JSON.stringify(nodes);
 		if (snapshot === this.#lastSnapshot) return;

@@ -7,7 +7,8 @@
 // canvas-history.ts uses for undo) stops a hydration from immediately
 // triggering a spurious autosave.
 import { canvasStore, type CanvasNode } from './canvas-state.svelte';
-import { captureAndUploadThumbnail } from './capture-thumbnail';
+import { canvasHistory } from './canvas/canvas-history';
+import { captureAndUploadThumbnail } from '$lib/components/editor/capture-thumbnail';
 import { identityState } from './template-panel/identity-state.svelte';
 import type { pageTemplate } from '$lib/server/db/schema';
 
@@ -23,9 +24,19 @@ function snapshotOf(
 	nodes: CanvasNode[],
 	title: string,
 	description: string,
-	category: string
+	category: string,
+	backgroundColor: string,
+	backgroundImage: string
 ) {
-	return JSON.stringify({ id, nodes, title, description, category });
+	return JSON.stringify({
+		id,
+		nodes,
+		title,
+		description,
+		category,
+		backgroundColor,
+		backgroundImage
+	});
 }
 
 class TemplateSync {
@@ -50,6 +61,9 @@ class TemplateSync {
 		canvasStore.selectedIds.clear();
 		canvasStore.lastSelectedId = null;
 		canvasStore.editingId = null;
+		canvasStore.pageBackgroundColor = row.backgroundColor;
+		canvasStore.pageBackgroundImage = row.backgroundImage ?? '';
+		canvasHistory.seed(canvasStore.nodes);
 
 		identityState.title = row.title;
 		identityState.description = row.description ?? '';
@@ -62,19 +76,47 @@ class TemplateSync {
 			canvasStore.nodes,
 			row.title,
 			row.description ?? '',
-			row.category
+			row.category,
+			row.backgroundColor,
+			row.backgroundImage ?? ''
 		);
 	}
 
 	// called from an $effect that deep-reads canvasStore.nodes + the identity
 	// fields on every change.
-	track(id: number, nodes: CanvasNode[], title: string, description: string, category: string) {
+	track(
+		id: number,
+		nodes: CanvasNode[],
+		title: string,
+		description: string,
+		category: string,
+		backgroundColor: string,
+		backgroundImage: string
+	) {
 		if (id !== this.#hydratedId) return; // load hasn't hydrated this id yet - never save
-		const snapshot = snapshotOf(id, nodes, title, description, category);
+		const snapshot = snapshotOf(
+			id,
+			nodes,
+			title,
+			description,
+			category,
+			backgroundColor,
+			backgroundImage
+		);
 		if (snapshot === this.#lastSavedSnapshot) return; // also covers the post-hydrate no-op tick
 		clearTimeout(this.#timer);
 		this.#timer = setTimeout(
-			() => this.#save(id, nodes, title, description, category, snapshot),
+			() =>
+				this.#save(
+					id,
+					nodes,
+					title,
+					description,
+					category,
+					backgroundColor,
+					backgroundImage,
+					snapshot
+				),
 			SAVE_DEBOUNCE_MS
 		);
 	}
@@ -85,6 +127,8 @@ class TemplateSync {
 		title: string,
 		description: string,
 		category: string,
+		backgroundColor: string,
+		backgroundImage: string,
 		snapshot: string
 	) {
 		this.saving = true;
@@ -92,7 +136,14 @@ class TemplateSync {
 			const res = await fetch(`/api/page-template/${id}`, {
 				method: 'PATCH',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ elements: nodes, title, description, category })
+				body: JSON.stringify({
+					elements: nodes,
+					title,
+					description,
+					category,
+					backgroundColor,
+					backgroundImage
+				})
 			});
 			// only mark saved on success - a failed request leaves the snapshot
 			// stale, so the next edit (or effect tick) retries it.
@@ -111,7 +162,9 @@ class TemplateSync {
 		if (this.#capturingThumbnail || !canvasStore.paperEl) return;
 		this.#capturingThumbnail = true;
 		try {
-			const cdnUrl = await captureAndUploadThumbnail(id, canvasStore.paperEl);
+			const cdnUrl = await captureAndUploadThumbnail(`/api/cdn/page/${id}`, canvasStore.paperEl, {
+				resetTransform: true
+			});
 			if (!cdnUrl) return;
 			await fetch(`/api/page-template/${id}`, {
 				method: 'PATCH',

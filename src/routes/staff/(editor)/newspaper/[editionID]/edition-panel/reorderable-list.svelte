@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { editionState } from '../edition-state.svelte';
-	import DropLine from './drop-line.svelte';
+	import DropLine from '$lib/components/editor/drop-line.svelte';
 	import ReorderableRow from './reorderable-row.svelte';
 
 	let {
@@ -15,10 +15,10 @@
 </script>
 
 <ul class="flex flex-col gap-1">
-	<DropLine {drag} index={0} />
+	<DropLine dropIndex={drag.dropIndex} index={0} />
 	{#each ids as id, index (id)}
 		<ReorderableRow {id} {drag} {onRemove} />
-		<DropLine {drag} index={index + 1} />
+		<DropLine dropIndex={drag.dropIndex} index={index + 1} />
 	{/each}
 	{#if ids.length === 0}
 		<li class="text-xs text-ui-text-muted">Nothing here yet.</li>

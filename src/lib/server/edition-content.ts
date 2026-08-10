@@ -15,6 +15,8 @@ export type RenderablePage = {
 	pageNumber: number;
 	nodes: CanvasNode[];
 	slotValues: Record<string, string>;
+	backgroundColor: string;
+	backgroundImage: string;
 };
 
 export type EditionContent = {
@@ -62,7 +64,9 @@ export async function loadEditionContent(edition: EditionRow): Promise<EditionCo
 					role: entry.role,
 					pageNumber: entry.pageNumber,
 					nodes: template.elements,
-					slotValues: entry.page.slotValues
+					slotValues: entry.page.slotValues,
+					backgroundColor: template.backgroundColor,
+					backgroundImage: template.backgroundImage ?? ''
 				}
 			];
 		}),

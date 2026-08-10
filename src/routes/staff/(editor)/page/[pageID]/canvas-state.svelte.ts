@@ -56,6 +56,9 @@ class CanvasStore {
 	editingId = $state<string | null>(null);
 	editingValue = $state('');
 
+	// double-click on canvas text element to enter rich text editing mode
+	editingTextId = $state<string | null>(null);
+
 	// drag to reorder / drag into a group, in the layers panel. the whole
 	// row is draggable: pointerdown just arms it, and only once the pointer
 	// has moved past a small threshold does it turn into a real drag (so a
@@ -203,7 +206,6 @@ class CanvasStore {
 			this.lastSelectedId = this.#armedId;
 			(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 		}
-		if (this.draggedId === null) return;
 
 		const isDraggedAGroup = this.findNode(this.draggedId)?.kind === 'group';
 		const rows = this.getVisibleRows().filter(
@@ -291,8 +293,20 @@ class CanvasStore {
 		}
 	}
 
+	startEditingText(id: string) {
+		this.select(id);
+		this.editingTextId = id;
+	}
+
+	stopEditingText() {
+		this.editingTextId = null;
+	}
+
 	// simple single-select, used by clicking an element directly on the canvas.
 	select(id: string | null) {
+		if (this.editingTextId !== id) {
+			this.editingTextId = null;
+		}
 		this.selectedIds.clear();
 		if (id === null) return;
 		this.selectedIds.add(id);

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { editionState } from '../edition-state.svelte';
 	import { pickTemplate, removeIndex, removeCitation, removePaper } from '../edition-sync.svelte';
-	import TemplatePicker from '../template-picker.svelte';
+	import TemplatePicker from '$lib/components/editor/template-picker.svelte';
+	import TitleField from '$lib/components/editor/title-field.svelte';
 	import PaperPicker from '../paper-picker.svelte';
-	import TitleField from './title-field.svelte';
-	import SectionHeader from './section-header.svelte';
+	import SectionHeader from '$lib/components/editor/section-header.svelte';
 	import CoverSection from './cover-section.svelte';
 	import ReorderableList from './reorderable-list.svelte';
 
@@ -15,7 +15,7 @@
 </script>
 
 <div class="flex h-full flex-col gap-4 overflow-y-auto p-3">
-	<TitleField />
+	<TitleField id="edition-title" bind:value={editionState.title} />
 
 	<SectionHeader label="Cover" onAdd={() => (coverPickerOpen = true)} />
 	<CoverSection />
@@ -46,18 +46,21 @@
 	bind:open={coverPickerOpen}
 	title="Choose a cover template"
 	templates={editionState.pickableCover}
+	authors={editionState.authors}
 	onpick={(template) => pickTemplate('cover', template)}
 />
 <TemplatePicker
 	bind:open={indexPickerOpen}
 	title="Choose an index template"
 	templates={editionState.pickableIndex}
+	authors={editionState.authors}
 	onpick={(template) => pickTemplate('index', template)}
 />
 <TemplatePicker
 	bind:open={citationPickerOpen}
 	title="Choose a citation template"
 	templates={editionState.pickableCitation}
+	authors={editionState.authors}
 	onpick={(template) => pickTemplate('citation', template)}
 />
 <PaperPicker bind:open={paperPickerOpen} />

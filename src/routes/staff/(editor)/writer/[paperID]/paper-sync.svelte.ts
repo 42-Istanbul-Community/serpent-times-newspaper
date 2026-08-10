@@ -7,7 +7,7 @@
 
 import { paperState, type TemplateRow } from './paper-state.svelte';
 import type { AuthorMap } from '$lib/authors';
-import { captureAndUploadThumbnail } from './capture-thumbnail';
+import { captureAndUploadThumbnail } from '$lib/components/editor/capture-thumbnail';
 import type { ArticlePage, article as articleTable } from '$lib/server/db/schema/editor/article';
 
 type ArticleRow = typeof articleTable.$inferSelect;
@@ -35,24 +35,19 @@ class PaperSync {
 		pickableTemplates: TemplateRow[],
 		authors: AuthorMap
 	) {
-		// design data, not the writer's own work - refresh it on every load,
-		// including re-runs for a paper that's already hydrated, so a template
-		// approved while this page was open shows up without a hard reload.
-		// Merged, never replaced, so a just-picked template that hasn't been
-		// autosaved yet (addPage registers it client-side) isn't dropped.
-		const known = new Set(paperState.templates.map((t) => t.id));
-		paperState.templates.push(...templates.filter((t) => !known.has(t.id)));
-		paperState.pickableTemplates = pickableTemplates;
-		paperState.authors = authors;
-
 		if (this.#hydratedId === row.id) return;
 		clearTimeout(this.#timer);
+
+		const templateById = new Map(paperState.templates.map((t) => [t.id, t]));
+		for (const t of templates) templateById.set(t.id, t);
+		paperState.templates = [...templateById.values()];
+		paperState.pickableTemplates = pickableTemplates;
+		paperState.authors = authors;
 		const pages = row.pages as ArticlePage[];
 
 		paperState.articleId = row.id;
 		paperState.title = row.title;
 		paperState.pages = pages;
-		paperState.templates = templates;
 		paperState.activePageId = pages[0]?.id ?? null;
 
 		this.#hydratedId = row.id;
@@ -100,7 +95,7 @@ class PaperSync {
 		if (this.#capturingThumbnail || !el) return;
 		this.#capturingThumbnail = true;
 		try {
-			const cdnUrl = await captureAndUploadThumbnail(id, el);
+			const cdnUrl = await captureAndUploadThumbnail(`/api/cdn/writer/${id}`, el);
 			if (!cdnUrl) return;
 			await fetch(`/api/article/${id}`, {
 				method: 'PATCH',

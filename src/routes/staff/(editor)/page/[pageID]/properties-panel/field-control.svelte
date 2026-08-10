@@ -4,7 +4,9 @@
 	import type { Snippet } from 'svelte';
 	import type { ComponentField } from '$lib/data/components';
 	import type { CanvasElement } from '../canvas-state.svelte';
-	import ImageDropzone from '../image-dropzone.svelte';
+	import ImageDropzone from '$lib/components/editor/image-dropzone.svelte';
+
+	import { fontStore } from '$lib/data/fonts.svelte';
 
 	let { field, element }: { field: ComponentField; element: CanvasElement } = $props();
 
@@ -14,6 +16,10 @@
 	// make that obvious. Appearance/Shadow/Typography stay editable either
 	// way, since those remain the designer's call.
 	let isContentLocked = $derived(field.group === 'Content' && element.properties.manual === 'true');
+
+	let selectOptions = $derived(
+		field.key === 'fontFamily' ? fontStore.options : field.options ?? []
+	);
 </script>
 
 {#if field.type === 'toggle'}
@@ -95,7 +101,27 @@
 {/snippet}
 
 {#snippet selectInput()}
-	<Select.Root type="single" disabled={isContentLocked} bind:value={element.properties[field.key]}>
+	<Select.Root
+		type="single"
+		disabled={isContentLocked}
+		bind:value={element.properties[field.key]}
+		onValueChange={(val) => {
+			if (val === '+ Add Font') {
+				fontStore.openModal();
+				return;
+			}
+			if (field.key === 'citationType' && val) {
+				if (
+					element.properties.content === 'Designer: {}' ||
+					element.properties.content === 'Writers: {}' ||
+					element.properties.content === 'Editor: {}'
+				) {
+					const capitalized = val.charAt(0).toUpperCase() + val.slice(1);
+					element.properties.content = `${capitalized}: {}`;
+				}
+			}
+		}}
+	>
 		<Select.Trigger
 			id="prop-{field.key}"
 			class="flex items-center justify-between rounded-md border border-ui-border bg-ui-surface px-2.5 py-1.5 text-sm text-ui-text-main disabled:cursor-not-allowed disabled:opacity-50"
@@ -104,13 +130,13 @@
 			<ChevronDown class="h-4 w-4 text-ui-text-muted" />
 		</Select.Trigger>
 		<Select.Portal>
-			<Select.Content class="rounded-md border border-ui-border bg-ui-surface p-1 shadow-md">
+			<Select.Content class="z-50 max-h-60 overflow-y-auto rounded-md border border-ui-border bg-ui-surface p-1 shadow-md">
 				<Select.Viewport>
-					{#each field.options ?? [] as option (option)}
+					{#each selectOptions as option (option)}
 						<Select.Item
 							value={option}
 							label={option}
-							class="rounded px-2 py-1.5 text-sm text-ui-text-main data-[highlighted]:bg-ui-bg"
+							class="rounded px-2 py-1.5 text-sm text-ui-text-main data-[highlighted]:bg-ui-bg {option === '+ Add Font' ? 'font-bold text-slytherin border-b border-ui-border mb-1' : ''}"
 						>
 							{option}
 						</Select.Item>

@@ -23,7 +23,9 @@
 			canvasStore.nodes,
 			identityState.title,
 			identityState.description,
-			identityState.category
+			identityState.category,
+			canvasStore.pageBackgroundColor,
+			canvasStore.pageBackgroundImage
 		);
 	});
 </script>

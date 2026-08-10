@@ -5,7 +5,7 @@
 	"defaultHeight": 40,
 	"properties": {
 		"citationType": "designer",
-		"content": "Designer: {}",
+		"content": "{}",
 		"fontSize": "12px"
 	},
 	"fields": [
