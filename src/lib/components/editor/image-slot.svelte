@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ImageDropzone from '../../../page/[pageID]/image-dropzone.svelte';
+	import ImageDropzone from './image-dropzone.svelte';
 	import type { CanvasElement } from '$lib/types/canvas';
 
 	let {
@@ -18,6 +18,7 @@
 <ImageDropzone
 	value={slotValues[el.id] ?? ''}
 	onchange={(url) => onSlotChange(el.id, url)}
+	aspect={(el.width || 220) / (el.height || 160)}
 	class="h-full w-full"
 	upload={uploadArticleImage}
 />

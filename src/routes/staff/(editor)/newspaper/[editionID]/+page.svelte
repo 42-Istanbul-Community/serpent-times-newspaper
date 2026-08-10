@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import PageRenderer from './page-renderer/page-renderer.svelte';
 	import { editionState } from './edition-state.svelte';
 	import { editionSync } from './edition-sync.svelte';
@@ -96,12 +95,14 @@
 				<PageRenderer
 					role={entry.role}
 					pageNumber={entry.pageNumber}
-					userNames={page.data.userNames}
+					userNames={data.userNames}
 					tocEntries={editionState.paperTocEntries}
 					articleId={entry.articleId}
 					pageId={entry.page.id}
 					nodes={template.elements}
 					slotValues={entry.page.slotValues}
+					backgroundColor={template.backgroundColor}
+					backgroundImage={template.backgroundImage ?? ''}
 					onSlotChange={(elementId, value) =>
 						editionState.updateSlot(entry.articleId, elementId, value)}
 				/>

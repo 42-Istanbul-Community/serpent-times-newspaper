@@ -2,7 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { and, desc, eq } from 'drizzle-orm';
 import { resolve } from '$app/paths';
 import { db } from '$lib/server/db';
-import { article } from '$lib/server/db/schema';
+import { article, newspaperEdition } from '$lib/server/db/schema';
 import { requireUserId } from '$lib/server/require-login';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -39,6 +39,20 @@ export const actions: Actions = {
 		const userId = requireUserId(locals);
 		const id = Number((await request.formData()).get('id'));
 		if (!Number.isInteger(id)) return fail(400, { message: 'Invalid id' });
+
+		// Clean up any edition referencing this paper ID before deletion
+		const editions = await db
+			.select({ id: newspaperEdition.id, articleIds: newspaperEdition.articleIds })
+			.from(newspaperEdition);
+
+		for (const ed of editions) {
+			if (ed.articleIds.includes(id)) {
+				await db
+					.update(newspaperEdition)
+					.set({ articleIds: ed.articleIds.filter((aId) => aId !== id) })
+					.where(eq(newspaperEdition.id, ed.id));
+			}
+		}
 
 		await db
 			.delete(article)

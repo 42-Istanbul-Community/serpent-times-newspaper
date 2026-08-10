@@ -42,6 +42,8 @@
 					pageId={page.id}
 					nodes={template.elements}
 					slotValues={page.slotValues}
+					backgroundColor={template.backgroundColor}
+					backgroundImage={template.backgroundImage ?? ''}
 					onSlotChange={(elementId, value) => paperState.updateSlot(page.id, elementId, value)}
 				/>
 			{/if}

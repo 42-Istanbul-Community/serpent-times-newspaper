@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Label } from 'bits-ui';
 	import { canvasStore } from '../canvas-state.svelte';
-	import ImageDropzone from '../image-dropzone.svelte';
+	import ImageDropzone from '$lib/components/editor/image-dropzone.svelte';
 </script>
 
 <div class="flex flex-col gap-3">

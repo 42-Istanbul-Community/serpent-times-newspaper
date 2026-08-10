@@ -2,7 +2,7 @@
 	import { FileUp } from '@lucide/svelte';
 	import { editionState } from '../edition-state.svelte';
 	import { editionSync } from '../edition-sync.svelte';
-	import TitleField from './title-field.svelte';
+	import TitleField from '$lib/components/editor/title-field.svelte';
 
 	// everything an uploaded edition still owns: its name and its status.
 	// The pages themselves came in as a finished PDF, so there is no cover /
@@ -10,7 +10,7 @@
 </script>
 
 <div class="flex h-full flex-col gap-4 overflow-y-auto p-3">
-	<TitleField />
+	<TitleField id="edition-title" bind:value={editionState.title} />
 
 	<div class="flex flex-col gap-2 rounded-md border border-ui-border bg-ui-surface p-3">
 		<span class="flex items-center gap-1.5 text-sm font-medium text-paper-ink">

@@ -5,7 +5,7 @@
 	"defaultHeight": 160,
 	"properties": {
 		"manual": "true",
-		"src": "",
+		"src": "/sample-image.jpg",
 		"objectFit": "cover"
 	},
 	"fields": [

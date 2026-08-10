@@ -17,6 +17,7 @@
 	import { DropdownMenu, NavigationMenu, Switch } from 'bits-ui';
 	import { canAccessSection } from '$lib/access';
 	import { ModeWatcher, mode, setMode } from 'mode-watcher';
+	import FontModal from '$lib/components/editor/font-modal.svelte';
 	import { homepageNav } from './homepage-nav.svelte';
 	import type { LayoutServerData } from './$types';
 	import './layout.css';
@@ -55,6 +56,7 @@
 </script>
 
 <ModeWatcher />
+<FontModal />
 
 <svelte:head>
 	<link rel="icon" href={favicon} />

@@ -21,6 +21,8 @@
 			pageNumber={page.pageNumber}
 			nodes={page.nodes}
 			slotValues={page.slotValues}
+			backgroundColor={page.backgroundColor}
+			backgroundImage={page.backgroundImage}
 			tocEntries={data.content.tocEntries}
 			credits={data.content.credits}
 			userNames={data.userNames}

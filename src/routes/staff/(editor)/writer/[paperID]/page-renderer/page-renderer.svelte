@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { boxAppearanceStyle } from '$lib/canvas/element-style';
+	import { boxAppearanceStyle, pageBackgroundStyle } from '$lib/canvas/element-style';
+	import ManualSlot from '$lib/components/editor/manual-slot.svelte';
 	import type { CanvasElement, CanvasNode } from '$lib/types/canvas';
 	import { paperState } from '../paper-state.svelte';
-	import { createArticleImageUploader } from '../upload-image';
+	import { createArticleImageUploader } from '$lib/components/editor/upload-image';
 	import StaticContent from './static-content.svelte';
-	import ManualSlot from './manual-slot.svelte';
+	import TextSlot from './text-slot.svelte';
 
 	// matches canvas.svelte's own local PAPER_WIDTH/PAPER_HEIGHT consts (not
 	// exported from $lib).
@@ -16,16 +17,20 @@
 		pageId,
 		nodes,
 		slotValues,
+		backgroundColor,
+		backgroundImage,
 		onSlotChange
 	}: {
 		articleId: number;
 		pageId: string;
 		nodes: CanvasNode[];
 		slotValues: Record<string, string>;
+		backgroundColor: string;
+		backgroundImage: string;
 		onSlotChange: (elementId: string, value: string) => void;
 	} = $props();
 
-	let uploadArticleImage = $derived(createArticleImageUploader(articleId));
+	let uploadArticleImage = $derived(createArticleImageUploader('writer', articleId));
 
 	let paperRootEl: HTMLDivElement = $state()!;
 
@@ -57,7 +62,10 @@
 <div
 	bind:this={paperRootEl}
 	class="relative mx-auto shrink-0 border border-paper-rule shadow-sm"
-	style="width: {PAPER_WIDTH}px; height: {PAPER_HEIGHT}px; background-color: #fbf8f1;"
+	style="width: {PAPER_WIDTH}px; height: {PAPER_HEIGHT}px; {pageBackgroundStyle(
+		backgroundColor,
+		backgroundImage
+	)}"
 >
 	<!-- canvasStore.elements is front-to-back (index 0 = topmost); DOM order
 	     paints later siblings on top, so reverse it here - same rule
@@ -69,7 +77,11 @@
 				`rotate(${el.rotation}deg)`}; {boxAppearanceStyle(el.properties)}"
 		>
 			{#if isManualSlot(el)}
-				<ManualSlot {el} {slotValues} {onSlotChange} {uploadArticleImage} />
+				<ManualSlot {el} {slotValues} {onSlotChange} {uploadArticleImage}>
+					{#snippet textSlot(el: CanvasElement)}
+						<TextSlot {el} {slotValues} {onSlotChange} />
+					{/snippet}
+				</ManualSlot>
 			{:else}
 				<StaticContent {el} />
 			{/if}

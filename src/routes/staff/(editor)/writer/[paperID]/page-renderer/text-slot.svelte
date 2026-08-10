@@ -19,14 +19,14 @@
 	// 'CoreImportExtension' before initialization"). It's a DOM editor, so
 	// there's nothing to render server-side anyway - until it mounts, the
 	// current value stands in.
-	let LexicalEditor = $state<typeof import('./lexical-editor.svelte').default>();
+	let LexicalEditor = $state<typeof import('$lib/components/editor/lexical-editor.svelte').default>();
 	onMount(async () => {
-		LexicalEditor = (await import('./lexical-editor.svelte')).default;
+		LexicalEditor = (await import('$lib/components/editor/lexical-editor.svelte')).default;
 	});
 </script>
 
 <div
-	class="flex h-full w-full outline outline-1 outline-slytherin/40 outline-dashed focus-within:outline-2 focus-within:outline-slytherin {el.type ===
+	class="pdf-manual-slot group relative flex h-full w-full rounded-xs border-2 border-dashed border-slytherin/60 bg-slytherin/[0.04] hover:border-slytherin hover:bg-slytherin/[0.08] focus-within:border-solid focus-within:border-slytherin focus-within:bg-transparent focus-within:ring-2 focus-within:ring-slytherin/30 transition-all {el.type ===
 	'title'
 		? verticalAlignClass(el.properties)
 		: 'items-stretch'}"
@@ -35,8 +35,8 @@
 		<input
 			value={slotValues[el.id] ?? ''}
 			oninput={(event) => onSlotChange(el.id, event.currentTarget.value)}
-			placeholder={el.properties.content}
-			class="w-full bg-transparent px-1 outline-none"
+			placeholder={el.properties.content || 'Click to type title...'}
+			class="w-full bg-transparent px-1.5 py-0.5 outline-none placeholder:text-slytherin/50 placeholder:italic"
 			style="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(el.properties)}"
 		/>
 	{:else if LexicalEditor}
@@ -44,11 +44,11 @@
 			value={slotValues[el.id] ?? ''}
 			onchange={(html) => onSlotChange(el.id, html)}
 			textStyle="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(el.properties)}"
-			placeholder={el.properties.content}
+			placeholder={el.properties.content || 'Click to type text...'}
 		/>
 	{:else}
 		<div
-			class="w-full px-1"
+			class="w-full px-1.5"
 			style="text-align: {el.properties.textAlign ?? 'left'}; {textBoxStyle(el.properties)}"
 		>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -56,3 +56,13 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	@media print {
+		.pdf-manual-slot {
+			border: none !important;
+			background: transparent !important;
+			box-shadow: none !important;
+		}
+	}
+</style>
